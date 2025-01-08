@@ -301,6 +301,12 @@ resource "aws_iam_role_policy" "deployment" {
 
       {
         Effect   = "Allow"
+        Action   = ["iam:CreateServiceLinkedRole"]
+        Resource = ["arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"]
+      },
+
+      {
+        Effect   = "Allow"
         Action   = ["secretsmanager:ListSecrets"]
         Resource = ["*"]
       },
