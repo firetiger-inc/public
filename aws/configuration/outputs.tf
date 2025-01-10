@@ -30,6 +30,22 @@ output "iceberg_tables" {
   }
 }
 
+output "ecs_cluster_name" {
+  value = aws_ecs_cluster.deployment.name
+}
+
+output "ecs_cluster_arn" {
+  value = aws_ecs_cluster.deployment.arn
+}
+
+output "cloudwatch_log_group_name" {
+  value = aws_cloudwatch_log_group.deployment.name
+}
+
+output "cloudwatch_log_group_arn" {
+  value = aws_cloudwatch_log_group.deployment.arn
+}
+
 output "task_role_name" {
   value      = aws_iam_role.execution.name
   depends_on = [aws_iam_role_policy.task]
@@ -102,14 +118,12 @@ output "glue_catalog_arn" {
 }
 
 output "glue_database_arn" {
-  value = data.aws_arn.database.arn
+  value = aws_glue_catalog_database.iceberg.arn
 }
 
 output "glue_table_arns" {
   value = {
-    logs    = data.aws_arn.logs.arn
-    metrics = data.aws_arn.metrics.arn
-    traces  = data.aws_arn.traces.arn
+    for table, glue in aws_glue_catalog_table.iceberg : table => glue.arn
   }
 }
 
