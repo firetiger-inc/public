@@ -6,7 +6,7 @@ resource "aws_s3_bucket" "deployment" {
 resource "time_static" "created_at" {}
 
 resource "random_uuid" "initial_table_metadata" {
-  for_each = toset(["logs", "metrics", "traces"])
+  for_each = toset(local.tables)
 }
 
 resource "aws_s3_object" "initial_table_metadata" {
@@ -17,6 +17,7 @@ resource "aws_s3_object" "initial_table_metadata" {
   key = format("%s/metadata/000000000-%s.metadata.json", each.key, each.value.result)
 
   # metadata
+  content_type = "application/json"
   content = jsonencode({
     format-version       = 2
     table-uuid           = each.value.result
@@ -66,11 +67,17 @@ resource "aws_s3_object" "configuration" {
   bucket = aws_s3_bucket.deployment.id
   key    = "firetiger/configuration.json"
 
+  content_type = "application/json"
   content = jsonencode({
-    bucket     = var.bucket
-    account_id = local.account_id
-    vpc_id     = local.vpc_id
-    subnet_ids = local.subnet_ids
+    region                           = data.aws_region.current.name
+    account_id                       = data.aws_caller_identity.current.account_id
+    vpc_id                           = var.vpc_id
+    subnet_ids                       = var.subnet_ids
+    bucket                           = var.bucket
+    resource_allocation              = var.resource_allocation
+    ecs_cluster_name                 = aws_ecs_cluster.deployment.name
+    cloudwatch_log_group_name        = aws_cloudwatch_log_group.deployment.name
+    service_discovery_namespace_name = aws_service_discovery_http_namespace.deployment.name
   })
 
   tags = {

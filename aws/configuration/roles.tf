@@ -54,6 +54,17 @@ resource "aws_iam_role_policy" "execution" {
           aws_secretsmanager_secret.query_basic_auth.arn,
         ]
       },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "servicediscovery:RegisterInstance",
+          "servicediscovery:DeregisterInstance",
+          "servicediscovery:GetInstance",
+          "servicediscovery:ListInstances",
+        ]
+        Resource = ["*"]
+      },
     ]
   })
 }
@@ -150,8 +161,11 @@ resource "aws_iam_role_policy" "deployment" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["ecs:ListTaskDefinitions"]
+        Effect = "Allow"
+        Action = [
+          "ecs:ListTaskDefinitions",
+          "ecs:DescribeTaskDefinition",
+        ]
         Resource = ["*"]
       },
 
@@ -170,9 +184,10 @@ resource "aws_iam_role_policy" "deployment" {
             data.aws_arn.cluster.account,
             aws_ecs_cluster.deployment.name,
           ),
-          format("arn:aws:ecs:%s:%s:task-definition/*:*",
+          format("arn:aws:ecs:%s:%s:task-definition/%s_*:*",
             data.aws_arn.cluster.region,
             data.aws_arn.cluster.account,
+            replace(aws_s3_bucket.deployment.id, ".", "_"),
           ),
         ]
       },
@@ -180,7 +195,45 @@ resource "aws_iam_role_policy" "deployment" {
       {
         Effect = "Allow"
         Action = [
-          "logs:DescribeLogGroups",
+          "servicediscovery:ListNamespaces",
+          "servicediscovery:ListTagsForResource",
+          "servicediscovery:DeleteService",
+          "servicediscovery:GetService",
+          "servicediscovery:ListServices",
+          "servicediscovery:ListInstances",
+          "servicediscovery:UpdateService",
+          "servicediscovery:TagResource",
+          "servicediscovery:UntagResource",
+        ]
+        Resource = ["*"]
+      },
+
+      {
+        Effect   = "Allow"
+        Action   = ["servicediscovery:GetNamespace"]
+        Resource = [aws_service_discovery_http_namespace.deployment.arn]
+      },
+
+      {
+        Effect   = "Allow"
+        Action   = ["servicediscovery:CreateService"]
+        Resource = ["*"]
+        Condition = {
+          StringEquals = {
+            "servicediscovery:NamespaceArn" = aws_service_discovery_http_namespace.deployment.arn
+          }
+        }
+      },
+
+      {
+        Effect   = "Allow"
+        Action   = ["logs:DescribeLogGroups"]
+        Resource = ["*"]
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
           "logs:DescribeLogStreams",
           "logs:GetLogEvents",
           "logs:FilterLogEvents",
@@ -192,10 +245,12 @@ resource "aws_iam_role_policy" "deployment" {
           "logs:DescribeQueries",
           "logs:GetLogDelivery",
           "logs:ListLogDeliveries",
+          "logs:ListTagsForResource",
         ]
         Resource = [
           aws_cloudwatch_log_group.deployment.arn,
           format("%s:*", aws_cloudwatch_log_group.deployment.arn),
+          format("%s:*:*", aws_cloudwatch_log_group.deployment.arn),
         ]
       },
 
@@ -232,8 +287,12 @@ resource "aws_iam_role_policy" "deployment" {
       },
 
       {
-        Effect   = "Allow"
-        Action   = ["acm:DescribeCertificate"]
+        Effect = "Allow"
+        Action = [
+          "acm:DescribeCertificate",
+          "acm:GetCertificate",
+          "acm:ListTagsForCertificate",
+        ]
         Resource = [aws_acm_certificate.deployment.arn]
       },
 
@@ -255,11 +314,14 @@ resource "aws_iam_role_policy" "deployment" {
         Resource = [aws_s3_bucket.deployment.arn]
       },
 
-      # {
-      #   Effect   = "Allow"
-      #   Action   = ["s3:GetObject"]
-      #   Resource = [format("%s/*", aws_s3_bucket.deployment.arn)]
-      # },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectTagging",
+        ]
+        Resource = [format("%s/firetiger/*", aws_s3_bucket.deployment.arn)]
+      },
 
       {
         Effect = "Allow"

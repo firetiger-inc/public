@@ -8,14 +8,19 @@ either by Firetiger or by the customer directly.
 
 ## Usage
 
-The module required the following variable as input:
+The module required the following variables as input:
 
 | Variable     | Description                                             |
 | ------------ | ------------------------------------------------------- |
 | `bucket`     | Name of the S3 bucket that will hold the Firetiger data |
+| `vpc_id`     | The VPC in which resources will be deployed             |
+| `subnet_ids` | A list of subnets in which resources will be deployed   |
 
 > :info: The S3 bucket is automaticaly created by the configuration module,
 > you do not need to create it ahead of time.
+
+> :warning: The subnets must have a route to AWS services, either through
+> an internet gateway or via VPC endpoints.
 
 Here is an example of how to instantiate the module:
 

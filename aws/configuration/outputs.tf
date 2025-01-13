@@ -1,7 +1,3 @@
-output "deployment" {
-  value = format("aws.%s", aws_s3_bucket.deployment.id)
-}
-
 output "vpc_id" {
   value = var.vpc_id
 }
@@ -30,25 +26,16 @@ output "iceberg_tables" {
   }
 }
 
-output "ecs_cluster_name" {
-  value = aws_ecs_cluster.deployment.name
-}
-
 output "ecs_cluster_arn" {
   value = aws_ecs_cluster.deployment.arn
-}
-
-output "cloudwatch_log_group_name" {
-  value = aws_cloudwatch_log_group.deployment.name
 }
 
 output "cloudwatch_log_group_arn" {
   value = aws_cloudwatch_log_group.deployment.arn
 }
 
-output "task_role_name" {
-  value      = aws_iam_role.execution.name
-  depends_on = [aws_iam_role_policy.task]
+output "service_discovery_namespace_arn" {
+  value = aws_service_discovery_http_namespace.deployment.arn
 }
 
 output "task_role_arn" {
@@ -60,11 +47,6 @@ output "task_role_policy" {
   value = jsondecode(aws_iam_role_policy.task.policy)
 }
 
-output "execution_role_name" {
-  value      = aws_iam_role.execution.name
-  depends_on = [aws_iam_role_policy.execution]
-}
-
 output "execution_role_arn" {
   value      = aws_iam_role.execution.arn
   depends_on = [aws_iam_role_policy.execution]
@@ -72,11 +54,6 @@ output "execution_role_arn" {
 
 output "execution_role_policy" {
   value = jsondecode(aws_iam_role_policy.execution.policy)
-}
-
-output "deployment_role_name" {
-  value      = aws_iam_role.deployment.name
-  depends_on = [aws_iam_role_policy.deployment]
 }
 
 output "deployment_role_arn" {
