@@ -2,6 +2,10 @@ output "vpc_id" {
   value = var.vpc_id
 }
 
+output "subnet_ids" {
+  value = var.subnet_ids
+}
+
 output "zone_id" {
   value = aws_route53_zone.deployment.zone_id
 }
