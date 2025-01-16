@@ -34,10 +34,14 @@ resource "google_storage_bucket_object" "configuration" {
 
   content_type = "application/json"
   content = jsonencode({
-    project                     = data.google_project.current.project_id
-    region                      = var.region
-    bucket                      = google_storage_bucket.deployment.name
-    basic-auth-ingest-secret-id = google_secret_manager_secret.ingest_basic_auth.id
-    basic-auth-query-secret-id  = google_secret_manager_secret.query_basic_auth.id
+    project = data.google_project.current.project_id
+    region  = var.region
+    bucket  = google_storage_bucket.deployment.name
+    basic-auth = {
+      secrets = {
+        ingest = google_secret_manager_secret.ingest_basic_auth.id
+        query  = google_secret_manager_secret.query_basic_auth.id
+      }
+    }
   })
 }

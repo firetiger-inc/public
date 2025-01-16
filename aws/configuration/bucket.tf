@@ -42,6 +42,12 @@ resource "aws_s3_object" "configuration" {
     ecs-cluster-name                 = aws_ecs_cluster.deployment.name
     cloudwatch-log-group-name        = aws_cloudwatch_log_group.deployment.name
     service-discovery-namespace-name = aws_service_discovery_http_namespace.deployment.name
+    basic-auth = {
+      secrets = {
+        ingest = aws_secretsmanager_secret.ingest_basic_auth.arn
+        query  = aws_secretsmanager_secret.query_basic_auth.arn
+      }
+    }
   })
 
   tags = {

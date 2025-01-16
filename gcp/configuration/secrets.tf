@@ -9,11 +9,11 @@ resource "random_password" "query_basic_auth" {
 }
 
 resource "google_secret_manager_secret" "ingest_basic_auth" {
-  secret_id = format("firetiger-ingest-basic-auth-%s", google_storage_bucket.deployment.name)
+  secret_id = format("%s-basic-auth-ingest", google_storage_bucket.deployment.name)
 
   labels = {
     firetiger-deployment  = google_storage_bucket.deployment.name
-    firetiger-secret-name = "firetiger-ingest-basic-auth"
+    firetiger-secret-name = "firetiger-basic-auth-ingest"
   }
 
   depends_on = [
@@ -26,11 +26,11 @@ resource "google_secret_manager_secret" "ingest_basic_auth" {
 }
 
 resource "google_secret_manager_secret" "query_basic_auth" {
-  secret_id = format("firetiger-query-basic-auth-%s", google_storage_bucket.deployment.name)
+  secret_id = format("%s-basic-auth-query", google_storage_bucket.deployment.name)
 
   labels = {
     firetiger-deployment  = google_storage_bucket.deployment.name
-    firetiger-secret-name = "firetiger-query-basic-auth"
+    firetiger-secret-name = "firetiger-basic-auth-query"
   }
 
   depends_on = [
