@@ -10,29 +10,34 @@ either by Firetiger or by the customer directly.
 
 The module required the following variables as input:
 
-| Variable     | Description                                            |
-| ------------ | ------------------------------------------------------ |
-| `bucket`     | Name of the S3 bucket that will hold the customer data |
-| `vpc_id`     | VPC to deploy Firetiger in (or use the default VPC)    |
+| Variable     | Description                                             |
+| ------------ | ------------------------------------------------------- |
+| `bucket`     | Name of the S3 bucket that will hold the Firetiger data |
+| `vpc_id`     | The VPC in which resources will be deployed             |
+| `subnet_ids` | A list of subnets in which resources will be deployed   |
+
+> :info: The S3 bucket is automaticaly created by the configuration module,
+> you do not need to create it ahead of time.
+
+> :warning: The subnets must have a route to AWS services, either through
+> an internet gateway or via VPC endpoints.
 
 Here is an example of how to instantiate the module:
 
 ```hcl
-variable "bucket" {
-  type = string
-}
-
-data "aws_vpc" "default" {
-  default = true
-}
-
-module "configuration" {
+module "firetiger_configuration" {
   source = "github.com/firetiger-inc/public/aws/configuration"
-  bucket = var.bucket
-  vpc_id = data.aws_vpc.default.id
+  bucket = "<bucket>"
 }
 
-output "configuration" {
-  value = module.configuration
+output "firetiger_deployment_role_arn" {
+  value = module.firetiger_configuration.deployment_role_arn
 }
 ```
+
+Once the configuration is complete, output the deployment role ARN and give it
+to the Firetiger team to have them trigger the deployment to your account. The
+ARN should be:
+
+	arn:aws:iam::<account-id>:role/FiretigerDeploymentRole@<bucket>
+

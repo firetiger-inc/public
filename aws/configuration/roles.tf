@@ -1,3 +1,14 @@
+data "aws_arn" "catalog" {
+  arn = format("arn:aws:glue:%s:%s:catalog",
+    data.aws_region.current.name,
+    data.aws_caller_identity.current.account_id,
+  )
+}
+
+data "aws_arn" "cluster" {
+  arn = aws_ecs_cluster.deployment.arn
+}
+
 resource "aws_iam_role" "execution" {
   name        = format("FiretigerExecutionRole@%s", aws_s3_bucket.deployment.id)
   description = "IAM role assumed by ECS Fargate"
@@ -42,6 +53,17 @@ resource "aws_iam_role_policy" "execution" {
           aws_secretsmanager_secret.ingest_basic_auth.arn,
           aws_secretsmanager_secret.query_basic_auth.arn,
         ]
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "servicediscovery:RegisterInstance",
+          "servicediscovery:DeregisterInstance",
+          "servicediscovery:GetInstance",
+          "servicediscovery:ListInstances",
+        ]
+        Resource = ["*"]
       },
     ]
   })
@@ -99,13 +121,10 @@ resource "aws_iam_role_policy" "task" {
           "glue:GetTable",
           "glue:UpdateTable",
         ]
-        Resource = [
-          data.aws_arn.catalog.arn,
-          data.aws_arn.database.arn,
-          data.aws_arn.logs.arn,
-          data.aws_arn.metrics.arn,
-          data.aws_arn.traces.arn,
-        ]
+        Resource = concat(
+          [data.aws_arn.catalog.arn, aws_glue_catalog_database.iceberg.arn],
+          [for _, table in aws_glue_catalog_table.iceberg : table.arn],
+        )
       },
     ]
   })
@@ -142,23 +161,11 @@ resource "aws_iam_role_policy" "deployment" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["ecs:CreateCluster"]
-        Resource = ["arn:aws:ecs:*:*:cluster/*"]
-        Condition = {
-          StringEquals = {
-            "aws:RequestTag/Name" = local.cluster
-          }
-        }
-      },
-
-      {
+        Effect = "Allow"
         Action = [
           "ecs:ListTaskDefinitions",
-          "ecs:RegisterTaskDefinition",
           "ecs:DescribeTaskDefinition",
         ]
-        Effect   = "Allow"
         Resource = ["*"]
       },
 
@@ -166,11 +173,56 @@ resource "aws_iam_role_policy" "deployment" {
         Effect = "Allow"
         Action = ["ecs:*"]
         Resource = [
-          format("arn:aws:ecs:*:*:cluster/%s", local.cluster),
-          format("arn:aws:ecs:*:*:service/%s/*", local.cluster),
-          format("arn:aws:ecs:*:*:task/%s/*", local.cluster),
-          "arn:aws:ecs:*:*:task-definition/*:*",
+          data.aws_arn.cluster.arn,
+          format("arn:aws:ecs:%s:%s:service/%s/*",
+            data.aws_arn.cluster.region,
+            data.aws_arn.cluster.account,
+            aws_ecs_cluster.deployment.name,
+          ),
+          format("arn:aws:ecs:%s:%s:task/%s/*",
+            data.aws_arn.cluster.region,
+            data.aws_arn.cluster.account,
+            aws_ecs_cluster.deployment.name,
+          ),
+          format("arn:aws:ecs:%s:%s:task-definition/%s_*:*",
+            data.aws_arn.cluster.region,
+            data.aws_arn.cluster.account,
+            replace(aws_s3_bucket.deployment.id, ".", "_"),
+          ),
         ]
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "servicediscovery:ListNamespaces",
+          "servicediscovery:ListTagsForResource",
+          "servicediscovery:DeleteService",
+          "servicediscovery:GetService",
+          "servicediscovery:ListServices",
+          "servicediscovery:ListInstances",
+          "servicediscovery:UpdateService",
+          "servicediscovery:TagResource",
+          "servicediscovery:UntagResource",
+        ]
+        Resource = ["*"]
+      },
+
+      {
+        Effect   = "Allow"
+        Action   = ["servicediscovery:GetNamespace"]
+        Resource = [aws_service_discovery_http_namespace.deployment.arn]
+      },
+
+      {
+        Effect   = "Allow"
+        Action   = ["servicediscovery:CreateService"]
+        Resource = ["*"]
+        Condition = {
+          StringEquals = {
+            "servicediscovery:NamespaceArn" = aws_service_discovery_http_namespace.deployment.arn
+          }
+        }
       },
 
       {
@@ -181,10 +233,24 @@ resource "aws_iam_role_policy" "deployment" {
 
       {
         Effect = "Allow"
-        Action = ["logs:*"]
+        Action = [
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents",
+          "logs:FilterLogEvents",
+          "logs:GetLogGroupFields",
+          "logs:GetLogRecord",
+          "logs:GetQueryResults",
+          "logs:StartQuery",
+          "logs:StopQuery",
+          "logs:DescribeQueries",
+          "logs:GetLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:ListTagsForResource",
+        ]
         Resource = [
-          format("arn:aws:logs:*:*:log-group:/ecs/%s", aws_s3_bucket.deployment.id),
-          format("arn:aws:logs:*:*:log-group:/ecs/%s:*", aws_s3_bucket.deployment.id),
+          aws_cloudwatch_log_group.deployment.arn,
+          format("%s:*", aws_cloudwatch_log_group.deployment.arn),
+          format("%s:*:*", aws_cloudwatch_log_group.deployment.arn),
         ]
       },
 
@@ -216,13 +282,17 @@ resource "aws_iam_role_policy" "deployment" {
 
       {
         Effect   = "Allow"
-        Action   = ["acm:DescribeCertificate", "acm:ListCertificates"]
+        Action   = ["acm:ListCertificates"]
         Resource = ["*"]
       },
 
       {
-        Effect   = "Allow"
-        Action   = ["acm:*"]
+        Effect = "Allow"
+        Action = [
+          "acm:DescribeCertificate",
+          "acm:GetCertificate",
+          "acm:ListTagsForCertificate",
+        ]
         Resource = [aws_acm_certificate.deployment.arn]
       },
 
@@ -245,30 +315,12 @@ resource "aws_iam_role_policy" "deployment" {
       },
 
       {
-        Effect   = "Allow"
-        Action   = ["s3:*"]
-        Resource = [format("%s/*", aws_s3_bucket.deployment.arn)]
-      },
-
-      {
         Effect = "Allow"
         Action = [
-          "glue:CreateDatabase",
-          "glue:CreateTable",
-          "glue:DeleteDatabase",
-          "glue:DeleteTable",
-          "glue:GetDatabase",
-          "glue:GetTable",
-          "glue:GetTags",
-          "glue:TagResource",
-          "glue:UpdateTable",
+          "s3:GetObject",
+          "s3:GetObjectTagging",
         ]
-        Resource = [
-          "arn:aws:glue:*:*:catalog",
-          format("arn:aws:glue:*:*:database/%s", local.database),
-          format("arn:aws:glue:*:*:table/%s/*", local.database),
-          format("arn:aws:glue:*:*:userDefinedFunction/%s/*", local.database),
-        ]
+        Resource = [format("%s/firetiger/*", aws_s3_bucket.deployment.arn)]
       },
 
       {
