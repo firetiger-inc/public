@@ -45,3 +45,33 @@ resource "google_storage_bucket_object" "configuration" {
     }
   })
 }
+
+
+# BigQuery resources
+resource "google_project_iam_member" "bigquery_admin" {
+  project = data.google_project.current.project_id
+  role    = "roles/bigquery.admin"
+  member  = "serviceAccount:${google_service_account.dataplane.email}"
+}
+
+resource "google_bigquery_dataset" "deployment" {
+  dataset_id  = local.deployment_name
+  description = "Firetiger telemetry data for ${local.deployment_name}"
+  labels = {
+    "firetiger"  = "true"
+    "deployment" = local.deployment_name
+  }
+}
+resource "google_bigquery_connection" "connection" {
+  connection_id = local.deployment_name
+  location      = "US"
+  friendly_name = "Firetiger: ${local.deployment_name}"
+  description   = "Firetiger connection for ${local.deployment_name}"
+  cloud_resource {}
+}
+
+resource "google_storage_bucket_iam_member" "bigquery_telemetry_storage_access" {
+  bucket = google_storage_bucket.deployment.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_bigquery_connection.connection.cloud_resource[0].service_account_id}"
+}
