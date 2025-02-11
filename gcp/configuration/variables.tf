@@ -13,5 +13,5 @@ locals {
 data "google_project" "current" {}
 
 locals {
-  deployment_name = replace(replace(var.bucket, "-", "_"), ".", "_")
+  deployment_name = replace(replace(var.bucket, "_", "-"), ".", "-")
 }
