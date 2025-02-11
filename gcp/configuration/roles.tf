@@ -12,7 +12,8 @@ locals {
     "secretmanager.admin",
     "serviceusage.serviceUsageAdmin",
     "storage.admin",
-    "dns.reader"
+    "dns.reader",
+    "compute.admin"
   ]
 
   dataplane_iam_role_bindings = [
