@@ -12,13 +12,15 @@ locals {
     "secretmanager.admin",
     "serviceusage.serviceUsageAdmin",
     "storage.admin",
-    "dns.reader",
-    "compute.admin"
+    "dns.admin",
+    "compute.admin",
+    "certificatemanager.owner"
   ]
 
   dataplane_iam_role_bindings = [
     "logging.logWriter",
     "storage.admin",
+    "secretmanager.secretAccessor"
   ]
 }
 
