@@ -1,6 +1,6 @@
 locals {
   # replace invalid characters with underscores
-  dataset_name = replace(var.bucket, "/[^a-zA-Z0-9_].+/", "_")
+  dataset_name = replace(var.bucket, "/[^a-zA-Z0-9_]+/", "_")
 }
 
 module "iceberg_table_metadata" {
