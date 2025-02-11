@@ -1,3 +1,8 @@
+locals {
+  # replace invalid characters with underscores
+  dataset_name = replace(var.bucket, "/[^a-zA-Z0-9_].+/", "_")
+}
+
 module "iceberg_table_metadata" {
   for_each = toset(local.tables)
   source   = "../../iceberg/table_metadata"
@@ -55,18 +60,18 @@ resource "google_project_iam_member" "bigquery_admin" {
 }
 
 resource "google_bigquery_dataset" "deployment" {
-  dataset_id  = local.deployment_name
-  description = "Firetiger telemetry data for ${local.deployment_name}"
+  dataset_id  = local.dataset_name
+  description = "Firetiger telemetry data for ${var.bucket}"
   labels = {
     "firetiger"  = "true"
-    "deployment" = local.deployment_name
+    "deployment" = var.bucket
   }
 }
 resource "google_bigquery_connection" "connection" {
-  connection_id = local.deployment_name
+  connection_id = var.bucket
   location      = "US"
-  friendly_name = "Firetiger: ${local.deployment_name}"
-  description   = "Firetiger connection for ${local.deployment_name}"
+  friendly_name = "Firetiger: ${var.bucket}"
+  description   = "Firetiger connection for ${var.bucket}"
   cloud_resource {}
 }
 
