@@ -96,7 +96,7 @@ resource "google_bigquery_dataset" "deployment" {
   }
 }
 resource "google_bigquery_connection" "connection" {
-  connection_id = var.bucket
+  connection_id = local.bigquery_connection_name
   location      = "US"
   friendly_name = "Firetiger: ${var.bucket}"
   description   = "Firetiger connection for ${var.bucket}"
