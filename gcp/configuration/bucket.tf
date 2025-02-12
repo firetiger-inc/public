@@ -6,7 +6,7 @@ locals {
 module "iceberg_table_metadata" {
   for_each = toset(local.tables)
   source   = "../../iceberg/table_metadata"
-  bucket   = var.bucket
+  bucket   = format("gs://%s", var.bucket)
   table    = each.value
 }
 
