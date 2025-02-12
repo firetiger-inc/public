@@ -1,0 +1,110 @@
+x-service: &service
+  image: public.ecr.aws/firetiger/firetiger:latest
+  volumes:
+  - storage:/mnt/storage
+  environment:
+  - FT_BUCKET=file:///mnt/storage
+  - FT_CREATE=true
+  - FT_CATALOG=sqlite3:///mnt/storage/catalog.sqlite?cache=shared
+  - FT_NAMESPACE=firetiger.docker.compose
+  - FT_LOG_LEVEL=debug
+  - FT_LOG_FORMAT=cli
+  - GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore  # https://protobuf.dev/reference/go/faq/#namespace-conflict
+  healthcheck:
+    test: curl -f http://localhost:4317/ready
+    interval: 10s
+    timeout: 3s
+    retries: 3
+    start_period: 5s
+  restart: always
+
+services:
+  firetiger-api-gateway:
+    image: traefik:v2.10
+    command:
+    - "--api.insecure=true"
+    - "--log.level=INFO"
+    - "--providers.docker=true"
+    - "--providers.docker.exposedbydefault=false"
+    - "--providers.file.directory=/etc/traefik/dynamic"
+    - "--entrypoints.web.address=:80"
+    - "--ping=true"
+    ports:
+    - 4317:80
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - ./docker-traefik.yaml:/etc/traefik/dynamic/routes.yml:ro
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8080/ping
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  firetiger-logs-ingest-server:
+    <<: *service
+    command: run ingest server
+
+  firetiger-metrics-ingest-server:
+    <<: *service
+    command: run ingest server
+
+  firetiger-traces-ingest-server:
+    <<: *service
+    command: run ingest server
+
+  firetiger-logs-ingest-worker:
+    <<: *service
+    command: run ingest worker --create --table=logs
+
+  firetiger-metrics-ingest-worker:
+    <<: *service
+    command: run ingest worker --create --table=metrics
+
+  firetiger-traces-ingest-worker:
+    <<: *service
+    command: run ingest worker --create --table=traces
+
+  firetiger-logs-compaction-worker:
+    <<: *service
+    command: run compaction worker --table=logs
+
+  firetiger-metrics-compaction-worker:
+    <<: *service
+    command: run compaction worker --table=metrics
+
+  firetiger-traces-compaction-worker:
+    <<: *service
+    command: run compaction worker --table=traces
+
+  firetiger-metrics-query-server:
+    <<: *service
+    command: run query server
+
+  firetiger-logs-query-server:
+    <<: *service
+    environment:
+    - FT_CATALOG=sqlite3:///mnt/storage/catalog.sqlite?cache=shared
+    - FT_NAMESPACE=firetiger.docker.compose
+    - GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn
+    - PORT=80
+    entrypoint: /bin/fireloki
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+    - 8321:3000
+    environment:
+    - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    - GF_AUTH_ANONYMOUS_ENABLED=true
+    - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    - GF_DATAPROXY_TIMEOUT=60
+    - GF_DATABASE_TYPE=sqlite3
+    - GF_DATABASE_PATH=/var/lib/grafana/grafana.db
+    volumes:
+    - grafana:/var/lib/grafana
+    - ./docker-grafana.yaml:/etc/grafana/provisioning/datasources/ds.yaml:ro
+
+volumes:
+  grafana:
+  storage:
