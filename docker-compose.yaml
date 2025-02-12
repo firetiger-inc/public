@@ -23,6 +23,7 @@ services:
   firetiger-api-gateway:
     image: traefik:v2.10
     command:
+    - "--accesslog=true"
     - "--api.insecure=true"
     - "--log.level=INFO"
     - "--providers.docker=true"
