@@ -1,6 +1,6 @@
 locals {
   # replace invalid characters with underscores
-  dataset_name = replace(var.bucket, "/[^a-zA-Z0-9_]+/", "_")
+  iceberg_namespace = google_storage_bucket.deployment.name
 }
 
 module "iceberg_table_metadata" {
@@ -24,6 +24,34 @@ resource "google_storage_bucket" "deployment" {
     firetiger-deployment = var.bucket
   }
 }
+
+resource "google_storage_bucket_object" "catalog_namespace" {
+  bucket = google_storage_bucket.deployment.name
+  name   = format("catalogs/telemetry/namespaces/%s/properties.json", local.iceberg_namespace)
+  content = jsonencode({
+    catalog-name = "telemetry"
+    namespace    = local.iceberg_namespace
+    properties   = {}
+  })
+}
+
+resource "google_storage_bucket_object" "catalog_table" {
+  for_each = module.iceberg_table_metadata
+  bucket   = google_storage_bucket.deployment.name
+  name     = format("catalogs/telemetry/namespaces/%s/tables/%s.json", local.iceberg_namespace, each.key)
+  content = jsonencode({
+    catalog-name      = "telemetry"
+    table-namespace   = local.iceberg_namespace
+    table-name        = each.key
+    metadata-location = format("gs://%s/%s", google_storage_bucket.deployment.name, each.value.metadata_location)
+  })
+
+  lifecycle {
+    // ignore subsequent updates to the catalog table after the initial creation
+    ignore_changes = [detect_md5hash]
+  }
+}
+
 
 resource "google_storage_bucket_object" "initial_table_metadata" {
   for_each     = module.iceberg_table_metadata
@@ -60,7 +88,7 @@ resource "google_project_iam_member" "bigquery_admin" {
 }
 
 resource "google_bigquery_dataset" "deployment" {
-  dataset_id  = local.dataset_name
+  dataset_id  = local.bigquery_dataset_name
   description = "Firetiger telemetry data for ${var.bucket}"
   labels = {
     "firetiger"  = "true"
