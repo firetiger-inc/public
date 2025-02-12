@@ -22,6 +22,7 @@ variable "bigquery_connection_name" {
 }
 
 locals {
+  dataplane_account_id     = format("%s-dataplane", replace(var.bucket, "/[^a-zA-Z0-9-]+/", "-"))
   bigquery_connection_name = var.bigquery_connection_name != null ? var.bigquery_connection_name : var.bucket
   bigquery_dataset_name    = var.bigquery_dataset_name != null ? var.bigquery_dataset_name : replace(var.bucket, "/[^a-zA-Z0-9_]+/", "_")
   tables                   = ["logs", "metrics", "traces"]

@@ -41,7 +41,7 @@ resource "google_project_iam_member" "role_binding" {
 
 # Data Plane
 resource "google_service_account" "dataplane" {
-  account_id = "${var.bucket}-dataplane"
+  account_id = local.dataplane_account_id
 }
 
 resource "google_project_iam_member" "dataplane_role_binding" {
