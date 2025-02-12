@@ -1,0 +1,57 @@
+http:
+  routers:
+    logs:
+      rule: "PathPrefix(`/v1/logs`) || PathPrefix(`/opentelemetry.proto.collector.logs.v1.LogsService/Export`)"
+      service: firetiger-logs-ingest-server
+      entryPoints:
+      - web
+
+    metrics:
+      rule: "PathPrefix(`/v1/metrics`) || PathPrefix(`/opentelemetry.proto.collector.metrics.v1.MetricsService/Export`) || PathPrefix(`/api/v1/write`)"
+      service: firetiger-metrics-ingest-server
+      entryPoints:
+      - web
+
+    traces:
+      rule: "PathPrefix(`/v1/traces`) || PathPrefix(`/opentelemetry.proto.collector.trace.v1.TraceService/Export`)"
+      service: firetiger-traces-ingest-server
+      entryPoints:
+      - web
+
+    loki:
+      rule: "PathPrefix(`/loki`)"
+      service: firetiger-logs-query-server
+      entryPoints:
+      - web
+
+    promql:
+      rule: "PathPrefix(`/api/v1`)"
+      service: firetiger-metrics-query-server
+      entryPoints:
+      - web
+
+  services:
+    firetiger-logs-ingest-server:
+      loadBalancer:
+        servers:
+        - url: "http://firetiger-logs-ingest-server:4317"
+
+    firetiger-metrics-ingest-server:
+      loadBalancer:
+        servers:
+        - url: "http://firetiger-metrics-ingest-server:4317"
+
+    firetiger-traces-ingest-server:
+      loadBalancer:
+        servers:
+        - url: "http://firetiger-traces-ingest-server:4317"
+
+    firetiger-logs-query-server:
+      loadBalancer:
+        servers:
+        - url: "http://firetiger-logs-query-server:4317"
+
+    firetiger-metrics-query-server:
+      loadBalancer:
+        servers:
+        - url: "http://firetiger-metrics-query-server:4317"
