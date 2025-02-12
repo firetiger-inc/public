@@ -6,6 +6,11 @@ variable "region" {
   type = string
 }
 
+variable "catalog_name" {
+  type    = string
+  default = "firetiger"
+}
+
 variable "bigquery_dataset_name" {
   type    = string
   default = null

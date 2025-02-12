@@ -27,9 +27,9 @@ resource "google_storage_bucket" "deployment" {
 
 resource "google_storage_bucket_object" "catalog_namespace" {
   bucket = google_storage_bucket.deployment.name
-  name   = format("catalogs/telemetry/namespaces/%s/properties.json", local.iceberg_namespace)
+  name   = format("catalogs/%s/namespaces/%s/properties.json", var.catalog_name, local.iceberg_namespace)
   content = jsonencode({
-    catalog-name = "telemetry"
+    catalog-name = var.catalog_name
     namespace    = local.iceberg_namespace
     properties   = {}
   })
@@ -38,9 +38,9 @@ resource "google_storage_bucket_object" "catalog_namespace" {
 resource "google_storage_bucket_object" "catalog_table" {
   for_each = module.iceberg_table_metadata
   bucket   = google_storage_bucket.deployment.name
-  name     = format("catalogs/telemetry/namespaces/%s/tables/%s.json", local.iceberg_namespace, each.key)
+  name     = format("catalogs/%s/namespaces/%s/tables/%s.json", var.catalog_name, local.iceberg_namespace, each.key)
   content = jsonencode({
-    catalog-name      = "telemetry"
+    catalog-name      = var.catalog_name
     table-namespace   = local.iceberg_namespace
     table-name        = each.key
     metadata-location = format("gs://%s/%s", google_storage_bucket.deployment.name, each.value.metadata_location)
@@ -89,7 +89,7 @@ resource "google_project_iam_member" "bigquery_admin" {
 
 resource "google_bigquery_dataset" "deployment" {
   dataset_id  = local.bigquery_dataset_name
-  description = "Firetiger telemetry data for ${var.bucket}"
+  description = "Firetiger data for ${var.bucket}"
   labels = {
     "firetiger"  = "true"
     "deployment" = var.bucket
