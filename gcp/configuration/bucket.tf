@@ -97,7 +97,7 @@ resource "google_bigquery_dataset" "deployment" {
 }
 resource "google_bigquery_connection" "connection" {
   connection_id = local.bigquery_connection_name
-  location      = "US"
+  location      = upper(local.bigquery_connection_location)
   friendly_name = "Firetiger: ${var.bucket}"
   description   = "Firetiger connection for ${var.bucket}"
   cloud_resource {}
