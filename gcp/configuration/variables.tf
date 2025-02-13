@@ -27,7 +27,8 @@ variable "bigquery_connection" {
 }
 
 locals {
-  dataplane_account_id         = replace(var.bucket, "/[^a-zA-Z0-9-]+/", "-")
+  deployment                   = replace(var.bucket, "/[^a-zA-Z0-9-]+/", "-")
+  dataplane_account_id         = local.deployment
   bigquery_connection          = var.bigquery_connection != null ? split(".", var.bigquery_connection) : ["US", var.bucket]
   bigquery_connection_location = local.bigquery_connection[0]
   bigquery_connection_name     = local.bigquery_connection[1]
