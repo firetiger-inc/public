@@ -12,7 +12,7 @@ module "iceberg_table_metadata" {
 
 resource "google_storage_bucket" "deployment" {
   name                        = var.bucket
-  location                    = upper(split("-", var.region)[0])
+  location                    = var.region
   force_destroy               = true
   uniform_bucket_level_access = true
 
