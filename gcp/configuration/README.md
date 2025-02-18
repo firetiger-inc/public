@@ -8,18 +8,17 @@ either by Firetiger or by the customer directly.
 
 ## Usage
 
-The module required the following variables as input:
+The module requires the following variables as input:
 
-| Variable     | Description                                             |
-| ------------ | ------------------------------------------------------- |
-| `bucket`     | Name of the S3 bucket that will hold the Firetiger data |
-| `region`     | Region where the Firetiger resources will be deployed   |
+| Variable | Description                                              |
+| -------- | -------------------------------------------------------- |
+| `bucket` | Name of the GCS bucket that will hold the Firetiger data |
+| `region` | Region where the Firetiger resources will be deployed    |
 
-> :info: The S3 bucket is automaticaly created by the configuration module,
+> :info: The GCS bucket is automatically created by the configuration module,
 > you do not need to create it ahead of time.
 
-> :warning: The subnets must have a route to AWS services, either through
-> an internet gateway or via VPC endpoints.
+> :warning: Ensure that the necessary network configurations are in place for GCP services.
 
 Here is an example of how to instantiate the module:
 
