@@ -67,18 +67,6 @@ services:
     <<: *service
     command: run ingest worker --create --table=traces
 
-  firetiger-logs-compaction-worker:
-    <<: *service
-    command: run compaction worker --table=logs
-
-  firetiger-metrics-compaction-worker:
-    <<: *service
-    command: run compaction worker --table=metrics
-
-  firetiger-traces-compaction-worker:
-    <<: *service
-    command: run compaction worker --table=traces
-
   firetiger-logs-query-server:
     <<: *service
     command: run query server --table=logs
