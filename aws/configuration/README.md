@@ -8,7 +8,7 @@ either by Firetiger or by the customer directly.
 
 ## Usage
 
-The module required the following variables as input:
+The module requires the following variables as input:
 
 | Variable     | Description                                             |
 | ------------ | ------------------------------------------------------- |
@@ -16,7 +16,7 @@ The module required the following variables as input:
 | `vpc_id`     | The VPC in which resources will be deployed             |
 | `subnet_ids` | A list of subnets in which resources will be deployed   |
 
-> :info: The S3 bucket is automaticaly created by the configuration module,
+> :info: The S3 bucket is automatically created by the configuration module,
 > you do not need to create it ahead of time.
 
 > :warning: The subnets must have a route to AWS services, either through
@@ -39,5 +39,4 @@ Once the configuration is complete, output the deployment role ARN and give it
 to the Firetiger team to have them trigger the deployment to your account. The
 ARN should be:
 
-	arn:aws:iam::<account-id>:role/FiretigerDeploymentRole@<bucket>
-
+    arn:aws:iam::<account-id>:role/FiretigerDeploymentRole@<bucket>
