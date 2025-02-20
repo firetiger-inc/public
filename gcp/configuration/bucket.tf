@@ -20,6 +20,65 @@ resource "google_storage_bucket" "deployment" {
   }
 }
 
+<<<<<<< Updated upstream
+||||||| Stash base
+resource "google_storage_bucket_object" "catalog_namespace" {
+  bucket = google_storage_bucket.deployment.name
+  name   = format("catalogs/%s/namespaces/%s/properties.json", var.catalog_name, local.iceberg_namespace)
+  content = jsonencode({
+    catalog-name = var.catalog_name
+    namespace    = local.iceberg_namespace
+    properties   = {}
+  })
+}
+
+resource "google_storage_bucket_object" "catalog_table" {
+  for_each = module.iceberg_table_metadata
+  bucket   = google_storage_bucket.deployment.name
+  name     = format("catalogs/%s/namespaces/%s/tables/%s.json", var.catalog_name, local.iceberg_namespace, each.key)
+  content = jsonencode({
+    catalog-name      = var.catalog_name
+    table-namespace   = local.iceberg_namespace
+    table-name        = each.key
+    metadata-location = format("gs://%s/%s", google_storage_bucket.deployment.name, each.value.metadata_location)
+  })
+
+  lifecycle {
+    // ignore subsequent updates to the catalog table after the initial creation
+    ignore_changes = [detect_md5hash]
+  }
+}
+
+
+=======
+resource "google_storage_bucket_object" "catalog_namespace" {
+  bucket = google_storage_bucket.deployment.name
+  name   = format("catalogs/%s/namespaces/%s/properties.json", var.catalog_name, local.iceberg_namespace)
+  content = jsonencode({
+    catalog-name = var.catalog_name
+    namespace    = local.iceberg_namespace
+    properties   = {}
+  })
+}
+
+resource "google_storage_bucket_object" "catalog_table" {
+  for_each = module.iceberg_table_metadata
+  bucket   = google_storage_bucket.deployment.name
+  name     = format("catalogs/%s/namespaces/%s/tables/%s.json", var.catalog_name, local.iceberg_namespace, each.key)
+  content = jsonencode({
+    catalog-name      = var.catalog_name
+    table-namespace   = local.iceberg_namespace
+    table-name        = each.key
+    metadata-location = format("gs://%s/%s", google_storage_bucket.deployment.name, each.value.metadata_location)
+  })
+
+  lifecycle {
+    // ignore subsequent updates to the catalog table after the initial creation
+    ignore_changes = [detect_md5hash]
+  }
+}
+
+>>>>>>> Stashed changes
 resource "google_storage_bucket_object" "initial_table_metadata" {
   for_each     = module.iceberg_table_metadata
   bucket       = google_storage_bucket.deployment.name
@@ -63,10 +122,22 @@ resource "google_bigquery_dataset" "deployment" {
   }
 }
 resource "google_bigquery_connection" "connection" {
+<<<<<<< Updated upstream
   connection_id = local.deployment_name
   location      = "US"
   friendly_name = "Firetiger: ${local.deployment_name}"
   description   = "Firetiger connection for ${local.deployment_name}"
+||||||| Stash base
+  connection_id = local.bigquery_connection_name
+  location      = upper(local.bigquery_connection_location)
+  friendly_name = "Firetiger: ${var.bucket}"
+  description   = "Firetiger connection for ${var.bucket}"
+=======
+  connection_id = local.bigquery_connection_name
+  location      = local.bigquery_connection_location
+  friendly_name = "Firetiger: ${var.bucket}"
+  description   = "Firetiger connection for ${var.bucket}"
+>>>>>>> Stashed changes
   cloud_resource {}
 }
 
