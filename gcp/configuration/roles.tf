@@ -14,6 +14,7 @@ locals {
     "storage.admin",
     "dns.admin",
     "compute.admin",
+    "compute.networkAdmin",
     "certificatemanager.owner",
     "cloudsql.admin"
   ]
