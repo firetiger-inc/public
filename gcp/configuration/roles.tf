@@ -12,11 +12,16 @@ locals {
     "secretmanager.admin",
     "serviceusage.serviceUsageAdmin",
     "storage.admin",
+    "dns.admin",
+    "compute.admin",
+    "certificatemanager.owner",
+    "cloudsql.admin"
   ]
 
   dataplane_iam_role_bindings = [
     "logging.logWriter",
     "storage.admin",
+    "secretmanager.secretAccessor"
   ]
 }
 
@@ -36,7 +41,7 @@ resource "google_project_iam_member" "role_binding" {
 
 # Data Plane
 resource "google_service_account" "dataplane" {
-  account_id = "${local.deployment_name}-dataplane"
+  account_id = local.dataplane_account_id
 }
 
 resource "google_project_iam_member" "dataplane_role_binding" {
