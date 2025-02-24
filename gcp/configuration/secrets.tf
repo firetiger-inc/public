@@ -17,7 +17,7 @@ resource "google_secret_manager_secret" "ingest_basic_auth" {
   }
 
   depends_on = [
-    google_project_service.enable["secretsmanager"],
+    google_project_service.enable["secretsmanager.googleapis.com"],
   ]
 
   replication {
@@ -34,7 +34,7 @@ resource "google_secret_manager_secret" "query_basic_auth" {
   }
 
   depends_on = [
-    google_project_service.enable["secretsmanager"],
+    google_project_service.enable["secretsmanager.googleapis.com"],
   ]
 
   replication {
