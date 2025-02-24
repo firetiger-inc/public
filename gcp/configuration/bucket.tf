@@ -17,7 +17,7 @@ resource "google_storage_bucket" "deployment" {
   uniform_bucket_level_access = true
 
   depends_on = [
-    google_project_service.enable["storage"],
+    google_project_service.enable["storage.googleapis.com"],
   ]
 
   labels = {
