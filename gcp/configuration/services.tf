@@ -15,7 +15,8 @@ locals {
     "dns.googleapis.com",
     "compute.googleapis.com",
     "certificatemanager.googleapis.com",
-    "servicenetworking.googleapis.com"
+    "servicenetworking.googleapis.com",
+    "aiplatform.googleapis.com"
   ]
 }
 
