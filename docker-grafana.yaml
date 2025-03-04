@@ -1,4 +1,5 @@
 apiVersion: 1
+
 datasources:
 - name: Prometheus
   type: prometheus
@@ -9,6 +10,7 @@ datasources:
   isDefault: false
   version: 1
   editable: false
+
 - name: Loki
   type: loki
   access: proxy
@@ -21,3 +23,16 @@ datasources:
   jsonData:
     maxLines: 1000
     timeout: 30
+
+- name: Jaeger
+  type: jaeger
+  access: proxy
+  orgId: 1
+  url: http://firetiger-api-gateway
+  basicAuth: false
+  isDefault: false
+  version: 1
+  editable: false
+  jsonData:
+    nodeGraph:
+      enabled: false

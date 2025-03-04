@@ -67,13 +67,9 @@ services:
     <<: *service
     command: run ingest worker --create --table=traces
 
-  firetiger-logs-query-server:
+  firetiger-query-server:
     <<: *service
-    command: run query server --table=logs
-
-  firetiger-metrics-query-server:
-    <<: *service
-    command: run query server --table=metrics
+    command: run query server
 
   grafana:
     image: grafana/grafana:latest

@@ -18,15 +18,9 @@ http:
       entryPoints:
       - web
 
-    loki:
-      rule: "PathPrefix(`/loki`)"
-      service: firetiger-logs-query-server
-      entryPoints:
-      - web
-
-    promql:
-      rule: "PathPrefix(`/api/v1`)"
-      service: firetiger-metrics-query-server
+    query:
+      rule: "PathPrefix(`/`)"
+      service: firetiger-query-server
       entryPoints:
       - web
 
@@ -46,12 +40,7 @@ http:
         servers:
         - url: "http://firetiger-traces-ingest-server:4317"
 
-    firetiger-logs-query-server:
+    firetiger-query-server:
       loadBalancer:
         servers:
-        - url: "http://firetiger-logs-query-server:4317"
-
-    firetiger-metrics-query-server:
-      loadBalancer:
-        servers:
-        - url: "http://firetiger-metrics-query-server:4317"
+        - url: "http://firetiger-query-server:4317"
