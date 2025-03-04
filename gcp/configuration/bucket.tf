@@ -72,8 +72,9 @@ resource "google_storage_bucket_object" "configuration" {
     bucket  = google_storage_bucket.deployment.name
     basic-auth = {
       secrets = {
-        ingest = google_secret_manager_secret.ingest_basic_auth.id
-        query  = google_secret_manager_secret.query_basic_auth.id
+        ingest          = google_secret_manager_secret.ingest_basic_auth.id
+        query           = google_secret_manager_secret.query_basic_auth.id
+        replication_api = google_secret_manager_secret.replication_api.id
       }
     }
   })
