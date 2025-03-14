@@ -16,7 +16,8 @@ locals {
     "compute.admin",
     "compute.networkAdmin",
     "certificatemanager.owner",
-    "cloudsql.admin"
+    "cloudsql.admin",
+    "monitoring.admin"
   ]
 
   dataplane_iam_role_bindings = [
