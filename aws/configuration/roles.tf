@@ -48,7 +48,7 @@ resource "aws_iam_role_policy" "execution" {
 
       {
         Effect = "Allow"
-        Action = ["secretsmanager:GetSecretValue"]
+        Action = ["secretsmanager:GetSecretValue", "secretsmanager:GetRandomPassword"]
         Resource = [
           aws_secretsmanager_secret.ingest_basic_auth.arn,
           aws_secretsmanager_secret.query_basic_auth.arn,
@@ -310,7 +310,7 @@ resource "aws_iam_role_policy" "deployment" {
 
       {
         Effect   = "Allow"
-        Action   = ["s3:GetBucketLocation", "s3:ListBucket"]
+        Action   = ["s3:GetBucketLocation", "s3:ListBucket", "s3:GetBucketPolicy"]
         Resource = [aws_s3_bucket.deployment.arn]
       },
 
