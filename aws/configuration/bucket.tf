@@ -1,7 +1,7 @@
 module "iceberg_table_metadata" {
   for_each = toset(local.tables)
   source   = "../../iceberg/table_metadata"
-  bucket   = var.bucket
+  bucket   = format("s3://%s", var.bucket)
   table    = each.value
 }
 
