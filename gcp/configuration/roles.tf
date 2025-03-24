@@ -24,6 +24,7 @@ locals {
     "logging.logWriter",
     "storage.admin",
     "secretmanager.viewer",
+    "secretmanager.secretAccessor",
     "aiplatform.user"
   ]
 }
