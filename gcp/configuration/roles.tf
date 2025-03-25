@@ -23,6 +23,7 @@ locals {
   dataplane_iam_role_bindings = [
     "logging.logWriter",
     "storage.admin",
+    "secretmanager.viewer",
     "secretmanager.secretAccessor",
     "aiplatform.user"
   ]
