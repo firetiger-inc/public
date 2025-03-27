@@ -161,12 +161,19 @@ resource "aws_iam_role_policy" "deployment" {
       {
         Effect = "Allow"
         Action = [
+          "ecs:DescribeServices",
+          "ecs:ListTasks",
+          "ecs:DescribeTasks",
           "ecs:ListTaskDefinitions",
           "ecs:DescribeTaskDefinition",
           "ec2:DescribeSecurityGroups",
           "ec2:DescribeSubnets",
           "ec2:DescribeVpcs",
           "ec2:DescribeVpcAttribute",
+
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics",
+          "cloudwatch:GetMetricData",
 
           "servicediscovery:ListNamespaces",
           "servicediscovery:ListTagsForResource",
