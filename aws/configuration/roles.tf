@@ -42,13 +42,7 @@ resource "aws_iam_role_policy" "execution" {
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
-        ]
-        Resource = ["*"]
-      },
 
-      {
-        Effect = "Allow"
-        Action = [
           "servicediscovery:RegisterInstance",
           "servicediscovery:DeregisterInstance",
           "servicediscovery:GetInstance",
@@ -169,6 +163,47 @@ resource "aws_iam_role_policy" "deployment" {
         Action = [
           "ecs:ListTaskDefinitions",
           "ecs:DescribeTaskDefinition",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeVpcAttribute",
+
+          "servicediscovery:ListNamespaces",
+          "servicediscovery:ListTagsForResource",
+          "servicediscovery:DeleteService",
+          "servicediscovery:GetService",
+          "servicediscovery:ListServices",
+          "servicediscovery:ListInstances",
+          "servicediscovery:UpdateService",
+          "servicediscovery:TagResource",
+          "servicediscovery:UntagResource",
+
+          "logs:DescribeLogGroups",
+
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeLoadBalancerAttributes",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeListenerAttributes",
+          "elasticloadbalancing:DescribeRules",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetGroupAttributes",
+          "elasticloadbalancing:DescribeTags",
+
+          "acm:ListCertificates",
+
+          "route53:GetChange",
+          "route53:ListHostedZones",
+
+          "application-autoscaling:RegisterScalableTarget",
+          "application-autoscaling:DeregisterScalableTarget",
+          "application-autoscaling:DescribeScalableTargets",
+          "application-autoscaling:DescribeScalingPolicies",
+          "application-autoscaling:ListTagsForResource",
+          "application-autoscaling:TagResource",
+          "application-autoscaling:PutScalingPolicy",
+          "application-autoscaling:DeleteScalingPolicy",
+
+          "secretsmanager:ListSecrets",
         ]
         Resource = ["*"]
       },
@@ -197,22 +232,6 @@ resource "aws_iam_role_policy" "deployment" {
       },
 
       {
-        Effect = "Allow"
-        Action = [
-          "servicediscovery:ListNamespaces",
-          "servicediscovery:ListTagsForResource",
-          "servicediscovery:DeleteService",
-          "servicediscovery:GetService",
-          "servicediscovery:ListServices",
-          "servicediscovery:ListInstances",
-          "servicediscovery:UpdateService",
-          "servicediscovery:TagResource",
-          "servicediscovery:UntagResource",
-        ]
-        Resource = ["*"]
-      },
-
-      {
         Effect   = "Allow"
         Action   = ["servicediscovery:GetNamespace"]
         Resource = [aws_service_discovery_http_namespace.deployment.arn]
@@ -227,12 +246,6 @@ resource "aws_iam_role_policy" "deployment" {
             "servicediscovery:NamespaceArn" = aws_service_discovery_http_namespace.deployment.arn
           }
         }
-      },
-
-      {
-        Effect   = "Allow"
-        Action   = ["logs:DescribeLogGroups"]
-        Resource = ["*"]
       },
 
       {
@@ -260,21 +273,6 @@ resource "aws_iam_role_policy" "deployment" {
 
       {
         Effect = "Allow"
-        Action = [
-          "elasticloadbalancing:DescribeLoadBalancers",
-          "elasticloadbalancing:DescribeLoadBalancerAttributes",
-          "elasticloadbalancing:DescribeListeners",
-          "elasticloadbalancing:DescribeListenerAttributes",
-          "elasticloadbalancing:DescribeRules",
-          "elasticloadbalancing:DescribeTargetGroups",
-          "elasticloadbalancing:DescribeTargetGroupAttributes",
-          "elasticloadbalancing:DescribeTags",
-        ]
-        Resource = ["*"]
-      },
-
-      {
-        Effect = "Allow"
         Action = ["elasticloadbalancing:*"]
         Resource = [
           "arn:aws:elasticloadbalancing:*:*:loadbalancer/app/ft-*/*",
@@ -285,12 +283,6 @@ resource "aws_iam_role_policy" "deployment" {
       },
 
       {
-        Effect   = "Allow"
-        Action   = ["acm:ListCertificates"]
-        Resource = ["*"]
-      },
-
-      {
         Effect = "Allow"
         Action = [
           "acm:DescribeCertificate",
@@ -298,12 +290,6 @@ resource "aws_iam_role_policy" "deployment" {
           "acm:ListTagsForCertificate",
         ]
         Resource = [aws_acm_certificate.deployment.arn]
-      },
-
-      {
-        Effect   = "Allow"
-        Action   = ["route53:GetChange", "route53:ListHostedZones"]
-        Resource = ["*"]
       },
 
       {
@@ -330,21 +316,6 @@ resource "aws_iam_role_policy" "deployment" {
       {
         Effect = "Allow"
         Action = [
-          "application-autoscaling:RegisterScalableTarget",
-          "application-autoscaling:DeregisterScalableTarget",
-          "application-autoscaling:DescribeScalableTargets",
-          "application-autoscaling:DescribeScalingPolicies",
-          "application-autoscaling:ListTagsForResource",
-          "application-autoscaling:TagResource",
-          "application-autoscaling:PutScalingPolicy",
-          "application-autoscaling:DeleteScalingPolicy",
-        ]
-        Resource = ["*"]
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
           "iam:GetRole",
           "iam:PassRole",
         ]
@@ -360,23 +331,6 @@ resource "aws_iam_role_policy" "deployment" {
         Action   = ["iam:CreateServiceLinkedRole"]
         Resource = ["arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"]
       },
-
-      {
-        Effect   = "Allow"
-        Action   = ["secretsmanager:ListSecrets"]
-        Resource = ["*"]
-      },
-
-      {
-        Effect = "Allow"
-        Action = [
-          "ec2:DescribeSecurityGroups",
-          "ec2:DescribeSubnets",
-          "ec2:DescribeVpcs",
-          "ec2:DescribeVpcAttribute",
-        ]
-        Resource = ["*"]
-      }
     ]
   })
 }
