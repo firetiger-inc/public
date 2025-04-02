@@ -50,6 +50,17 @@ resource "aws_iam_role_policy" "execution" {
         ]
         Resource = ["*"]
       },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecretVersionIds"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.ingest_basic_auth.arn,
+          aws_secretsmanager_secret.query_basic_auth.arn,
+        ]
+      }
     ]
   })
 }
