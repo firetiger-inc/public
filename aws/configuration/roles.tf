@@ -60,7 +60,7 @@ resource "aws_iam_role_policy" "execution" {
           aws_secretsmanager_secret.ingest_basic_auth.arn,
           aws_secretsmanager_secret.query_basic_auth.arn,
         ]
-      }
+      },
     ]
   })
 }
@@ -93,19 +93,18 @@ resource "aws_iam_role_policy" "task" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect   = "Allow"
-        Action   = ["s3:ListBucket"]
-        Resource = [aws_s3_bucket.deployment.arn]
-      },
-
-      {
         Effect = "Allow"
         Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation",
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
         ]
-        Resource = [format("%s/*", aws_s3_bucket.deployment.arn)]
+        Resource = [
+          aws_s3_bucket.deployment.arn,
+          format("%s/*", aws_s3_bucket.deployment.arn)
+        ]
       },
 
       {
@@ -116,12 +115,36 @@ resource "aws_iam_role_policy" "task" {
           "glue:GetTables",
           "glue:GetTable",
           "glue:UpdateTable",
+          "glue:GetPartition",
+          "glue:GetPartitions",
+          "glue:BatchGetPartition"
         ]
         Resource = concat(
           [data.aws_arn.catalog.arn, aws_glue_catalog_database.iceberg.arn],
           [for _, table in aws_glue_catalog_table.iceberg : table.arn],
         )
       },
+
+      {
+        Sid    = "AthenaQueryAccess"
+        Effect = "Allow"
+        Action = [
+          "athena:ListDatabases",
+          "athena:ListDataCatalogs",
+          "athena:ListWorkGroups",
+          "athena:GetDatabase",
+          "athena:GetDataCatalog",
+          "athena:GetQueryExecution",
+          "athena:GetQueryResults",
+          "athena:GetTableMetadata",
+          "athena:GetWorkGroup",
+          "athena:ListTableMetadata",
+          "athena:StartQueryExecution",
+          "athena:StopQueryExecution"
+        ]
+        Resource = ["*"]
+      },
+
       {
         Effect = "Allow"
         Action = [
