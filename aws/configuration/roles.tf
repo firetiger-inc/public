@@ -60,7 +60,43 @@ resource "aws_iam_role_policy" "execution" {
           aws_secretsmanager_secret.ingest_basic_auth.arn,
           aws_secretsmanager_secret.query_basic_auth.arn,
         ]
-      }
+      },
+      {
+        Sid    = "AthenaQueryAccess"
+        Effect = "Allow"
+        Action = [
+          "athena:ListDatabases",
+          "athena:ListDataCatalogs",
+          "athena:ListWorkGroups",
+          "athena:GetDatabase",
+          "athena:GetDataCatalog",
+          "athena:GetQueryExecution",
+          "athena:GetQueryResults",
+          "athena:GetTableMetadata",
+          "athena:GetWorkGroup",
+          "athena:ListTableMetadata",
+          "athena:StartQueryExecution",
+          "athena:StopQueryExecution"
+        ]
+        Resource = ["*"]
+      },
+      {
+        Sid    = "GlueReadAccess"
+        Effect = "Allow"
+        Action = [
+          "glue:GetDatabase",
+          "glue:GetDatabases",
+          "glue:GetTable",
+          "glue:GetTables",
+          "glue:GetPartition",
+          "glue:GetPartitions",
+          "glue:BatchGetPartition"
+        ]
+        Resource = concat(
+          [data.aws_arn.catalog.arn, aws_glue_catalog_database.iceberg.arn],
+          [for _, table in aws_glue_catalog_table.iceberg : table.arn],
+        )
+      },
     ]
   })
 }
