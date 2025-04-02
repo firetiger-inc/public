@@ -111,7 +111,16 @@ resource "aws_iam_role_policy" "task" {
           [for _, table in aws_glue_catalog_table.iceberg : table.arn],
         )
       },
-
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
+      },
       {
         Effect = "Allow"
         Action = [
