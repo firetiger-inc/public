@@ -161,11 +161,12 @@ resource "aws_iam_role_policy" "deployment" {
       {
         Effect = "Allow"
         Action = [
-          "ecs:DescribeServices",
           "ecs:ListClusters",
           "ecs:ListTasks",
-          "ecs:DescribeTasks",
           "ecs:ListTaskDefinitions",
+          "ecs:DescribeTasks",
+          "ecs:DescribeClusters",	  
+          "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
           "ec2:DescribeSecurityGroups",
           "ec2:DescribeSubnets",
