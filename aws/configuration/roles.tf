@@ -111,11 +111,11 @@ resource "aws_iam_role_policy" "task" {
           [for _, table in aws_glue_catalog_table.iceberg : table.arn],
         )
       },
-      
+
       {
         Effect = "Allow"
         Action = [
-          "secretsmanager:GetSecretValue", 
+          "secretsmanager:GetSecretValue",
           "secretsmanager:GetRandomPassword",
           "secretsmanager:ListSecretVersionIds"
         ]
@@ -162,6 +162,7 @@ resource "aws_iam_role_policy" "deployment" {
         Effect = "Allow"
         Action = [
           "ecs:DescribeServices",
+          "ecs:ListClusters",
           "ecs:ListTasks",
           "ecs:DescribeTasks",
           "ecs:ListTaskDefinitions",
@@ -194,6 +195,7 @@ resource "aws_iam_role_policy" "deployment" {
           "elasticloadbalancing:DescribeRules",
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeTargetGroupAttributes",
+          "elasticloadbalancing:DescribeScalingActivities",
           "elasticloadbalancing:DescribeTags",
 
           "acm:ListCertificates",
