@@ -50,6 +50,17 @@ resource "aws_iam_role_policy" "execution" {
         ]
         Resource = ["*"]
       },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecretVersionIds"
+        ]
+        Resource = [
+          aws_secretsmanager_secret.ingest_basic_auth.arn,
+          aws_secretsmanager_secret.query_basic_auth.arn,
+        ]
+      }
     ]
   })
 }
@@ -111,11 +122,20 @@ resource "aws_iam_role_policy" "task" {
           [for _, table in aws_glue_catalog_table.iceberg : table.arn],
         )
       },
-      
       {
         Effect = "Allow"
         Action = [
-          "secretsmanager:GetSecretValue", 
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
           "secretsmanager:GetRandomPassword",
           "secretsmanager:ListSecretVersionIds"
         ]
@@ -161,12 +181,21 @@ resource "aws_iam_role_policy" "deployment" {
       {
         Effect = "Allow"
         Action = [
+          "ecs:ListClusters",
+          "ecs:ListTasks",
           "ecs:ListTaskDefinitions",
+          "ecs:DescribeTasks",
+          "ecs:DescribeClusters",
+          "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
           "ec2:DescribeSecurityGroups",
           "ec2:DescribeSubnets",
           "ec2:DescribeVpcs",
           "ec2:DescribeVpcAttribute",
+
+          "cloudwatch:GetMetricStatistics",
+          "cloudwatch:ListMetrics",
+          "cloudwatch:GetMetricData",
 
           "servicediscovery:ListNamespaces",
           "servicediscovery:ListTagsForResource",
@@ -198,6 +227,7 @@ resource "aws_iam_role_policy" "deployment" {
           "application-autoscaling:DeregisterScalableTarget",
           "application-autoscaling:DescribeScalableTargets",
           "application-autoscaling:DescribeScalingPolicies",
+          "application-autoscaling:DescribeScalingActivities",
           "application-autoscaling:ListTagsForResource",
           "application-autoscaling:TagResource",
           "application-autoscaling:PutScalingPolicy",
