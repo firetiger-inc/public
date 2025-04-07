@@ -22,7 +22,7 @@ locals {
   }
 
   properties = merge(local.default_properties, var.properties, {
-    "write.data.location" = format("%s/%s/data", var.bucket, var.table)
+    "write.data.path" = format("%s/%s/data", var.bucket, var.table)
   })
 }
 
