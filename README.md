@@ -35,7 +35,7 @@ The repository contains a `.pyiceberg.yaml` file with a default catalog
 configured to point at the Firetiger REST catalog started by the docker compose
 stack.
 
-```
+```sh
 $ pyiceberg list firetiger.docker.compose
 firetiger.docker.compose.logs
 firetiger.docker.compose.metrics
@@ -48,7 +48,7 @@ The Apache Iceberg tables backing the Firetiger stack can be queried using
 the DuckDB `httpfs` and `iceberg` extensions. The following example shows how
 to select all rows in the local logs table:
 
-```
+```sql
 install https;
 install iceberg;
 
