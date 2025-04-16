@@ -18,6 +18,18 @@ http:
       entryPoints:
       - web
 
+    catalog:
+      rule: "PathPrefix(`/catalog`)"
+      service: firetiger-catalog-server
+      entryPoints:
+      - web
+
+    storage:
+      rule: "PathPrefix(`/storage`)"
+      service: firetiger-storage-server
+      entryPoints:
+      - web
+
     query:
       rule: "PathPrefix(`/`)"
       service: firetiger-query-server
@@ -44,3 +56,13 @@ http:
       loadBalancer:
         servers:
         - url: "http://firetiger-query-server:4317"
+
+    firetiger-catalog-server:
+      loadBalancer:
+        servers:
+        - url: "http://firetiger-catalog-server:4317"
+
+    firetiger-storage-server:
+      loadBalancer:
+        servers:
+        - url: "http://firetiger-storage-server:4317"

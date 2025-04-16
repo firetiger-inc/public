@@ -1,13 +1,11 @@
 x-service: &service
-  image: public.ecr.aws/firetiger/firetiger:latest
+  image: image: public.ecr.aws/firetiger/firetiger:latest
   volumes:
   - storage:/mnt/storage
-  environment:
-  - FT_BUCKET=file:///mnt/storage
-  - FT_CREATE=true
-  - FT_CATALOG=sqlite3:///mnt/storage/catalog.sqlite?cache=shared
+  environment: &environment
+  - FT_BUCKET=http://firetiger-storage-server:4317
+  - FT_CATALOG=http://firetiger-catalog-server:4317
   - FT_NAMESPACE=firetiger.docker.compose
-  - FT_LOG_LEVEL=debug
   - FT_LOG_FORMAT=cli
   - GOLANG_PROTOBUF_REGISTRATION_CONFLICT=ignore  # https://protobuf.dev/reference/go/faq/#namespace-conflict
   - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
@@ -71,6 +69,27 @@ services:
     <<: *service
     command: run query server
 
+  firetiger-catalog-server:
+    <<: *service
+    command: |-
+      run catalog server
+      --catalog-backend=sqlite3:///mnt/storage/catalog.sqlite?cache=shared
+      --catalog-frontend=http://localhost:4317/catalog
+      --storage-backend=http://firetiger-storage-server:4317
+      --storage-frontend=http://localhost:4317/storage
+    volumes:
+    - storage:/mnt/storage
+
+  firetiger-storage-server:
+    <<: *service
+    command: |-
+      run storage server
+      --bucket=file:///mnt/storage
+      --storage-backend=http://firetiger-storage-server:4317
+      --storage-frontend=http://localhost:4317/storage
+    volumes:
+    - storage:/mnt/storage
+
   grafana:
     image: grafana/grafana:latest
     ports:
@@ -86,16 +105,17 @@ services:
     - grafana:/var/lib/grafana
     - ./docker-grafana.yaml:/etc/grafana/provisioning/datasources/ds.yaml:ro
 
+  # https://opentelemetry.io/docs/collector/installation/
   otel-collector:
     image: otel/opentelemetry-collector-contrib
     ports:
-    - 1888:1888 # pprof extension
-    - 8888:8888 # Prometheus metrics exposed by the Collector
-    - 8889:8889 # Prometheus exporter metrics
-    - 13133:13133 # health_check extension
-    - 4319:4317 # OTLP gRPC receiver  # Modified host port so it doesn't conflict
-    - 4318:4318 # OTLP http receiver
-    - 55679:55679 # zpages extension
+      - 1888:1888 # pprof extension
+      - 8888:8888 # Prometheus metrics exposed by the Collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4319:4317 # OTLP gRPC receiver  # Modified host port so it doesn't conflict
+      - 4318:4318 # OTLP http receiver
+      - 55679:55679 # zpages extensio
 
 volumes:
   grafana:
