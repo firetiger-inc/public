@@ -1,6 +1,7 @@
 catalog:
-  # Address of the Firetiger REST catalog in the local docker compose stack.
-  uri: http://localhost:4317/catalog
-  # Override the S3 endpoint to direct requests at the Firetiger storage
-  # server instead of AWS.
-  s3.endpoint: http://localhost:4317
+  default:
+    # Address of the Firetiger REST catalog in the local docker compose stack.
+    uri: http://localhost:4317/catalog
+    # Override the S3 endpoint to direct requests at the Firetiger storage
+    # server instead of AWS.
+    s3.endpoint: http://localhost:4317

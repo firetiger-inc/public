@@ -1,7 +1,5 @@
 x-service: &service
-  image: image: public.ecr.aws/firetiger/firetiger:latest
-  volumes:
-  - storage:/mnt/storage
+  image: public.ecr.aws/firetiger/firetiger:latest
   environment: &environment
   - FT_BUCKET=http://firetiger-storage-server:4317
   - FT_CATALOG=http://firetiger-catalog-server:4317
