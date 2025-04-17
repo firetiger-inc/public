@@ -39,6 +39,8 @@ resource "aws_iam_role_policy" "execution" {
       {
         Effect = "Allow"
         Action = [
+          "ecr:GetAuthorizationToken",
+
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents",
@@ -50,11 +52,31 @@ resource "aws_iam_role_policy" "execution" {
         ]
         Resource = ["*"]
       },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability",
+        ]
+        Resource = [
+          format("arn:aws:ecr:%s:%s:repository/%s/firetiger",
+            data.aws_region.current.name,
+            data.aws_caller_identity.current.account_id,
+          replace(aws_s3_bucket.deployment.id, ".", "-")),
+          format("arn:aws:ecr:%s:%s:repository/%s/grafana",
+            data.aws_region.current.name,
+            data.aws_caller_identity.current.account_id,
+          replace(aws_s3_bucket.deployment.id, ".", "-")),
+        ]
+      },
+
       {
         Effect = "Allow"
         Action = [
           "secretsmanager:GetSecretValue",
-          "secretsmanager:ListSecretVersionIds"
+          "secretsmanager:ListSecretVersionIds",
         ]
         Resource = [
           aws_secretsmanager_secret.ingest_basic_auth.arn,
@@ -204,6 +226,12 @@ resource "aws_iam_role_policy" "deployment" {
       {
         Effect = "Allow"
         Action = [
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:DescribeRepositories",
+          "ecr:GetAuthorizationToken",
+          "ecr:TagResource",
+          "ecr:ListTagsForResource",
           "ecs:ListClusters",
           "ecs:ListTasks",
           "ecs:ListTaskDefinitions",
@@ -259,6 +287,29 @@ resource "aws_iam_role_policy" "deployment" {
           "secretsmanager:ListSecrets",
         ]
         Resource = ["*"]
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+        ]
+        Resource = [
+          format("arn:aws:ecr:%s:%s:repository/%s/firetiger",
+            data.aws_region.current.name,
+            data.aws_caller_identity.current.account_id,
+          replace(aws_s3_bucket.deployment.id, ".", "-")),
+          format("arn:aws:ecr:%s:%s:repository/%s/grafana",
+            data.aws_region.current.name,
+            data.aws_caller_identity.current.account_id,
+          replace(aws_s3_bucket.deployment.id, ".", "-")),
+        ]
       },
 
       {
