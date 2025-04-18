@@ -336,6 +336,9 @@ resource "aws_iam_role_policy" "deployment" {
           "lambda:TagResource",
           "lambda:UntagResource",
           "lambda:ListTags",
+          "lambda:AddPermission",
+          "lambda:RemovePermission",
+          "lambda:GetPolicy",
 
           "iam:PassRole",
 
