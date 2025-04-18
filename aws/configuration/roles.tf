@@ -9,6 +9,51 @@ data "aws_arn" "cluster" {
   arn = aws_ecs_cluster.deployment.arn
 }
 
+resource "aws_iam_role" "lambda" {
+  name = format("FiretigerLambdaRole@%s", aws_s3_bucket.deployment.id)
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "lambda" {
+  role = aws_iam_role.lambda.name
+  name = format("FiretigerLambdaPolicy@%s", aws_s3_bucket.deployment.id)
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "execution" {
   name        = format("FiretigerExecutionRole@%s", aws_s3_bucket.deployment.id)
   description = "IAM role assumed by ECS Fargate"
@@ -226,12 +271,20 @@ resource "aws_iam_role_policy" "deployment" {
       {
         Effect = "Allow"
         Action = [
+          "ecr:GetRepositoryPolicy",
+          "ecr:SetRepositoryPolicy",
+          "ecr:DeleteRepositoryPolicy",
+          "ecr:DescribeRepositories",
           "ecr:CreateRepository",
           "ecr:DeleteRepository",
-          "ecr:DescribeRepositories",
-          "ecr:GetAuthorizationToken",
           "ecr:TagResource",
+          "ecr:UntagResource",
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
           "ecr:ListTagsForResource",
+
           "ecs:ListClusters",
           "ecs:ListTasks",
           "ecs:ListTaskDefinitions",
@@ -239,6 +292,7 @@ resource "aws_iam_role_policy" "deployment" {
           "ecs:DescribeClusters",
           "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
+
           "ec2:DescribeSecurityGroups",
           "ec2:DescribeSubnets",
           "ec2:DescribeVpcs",
@@ -247,6 +301,15 @@ resource "aws_iam_role_policy" "deployment" {
           "cloudwatch:GetMetricStatistics",
           "cloudwatch:ListMetrics",
           "cloudwatch:GetMetricData",
+
+          "athena:CreateDataCatalog",
+          "athena:DeleteDataCatalog",
+          "athena:GetDataCatalog",
+          "athena:ListDataCatalogs",
+          "athena:UpdateDataCatalog",
+          "athena:TagResource",
+          "athena:UntagResource",
+          "athena:ListTagsForResource",
 
           "servicediscovery:ListNamespaces",
           "servicediscovery:ListTagsForResource",
@@ -258,7 +321,35 @@ resource "aws_iam_role_policy" "deployment" {
           "servicediscovery:TagResource",
           "servicediscovery:UntagResource",
 
+          "lambda:CreateFunction",
+          "lambda:GetFunction",
+          "lambda:UpdateFunctionCode",
+          "lambda:UpdateFunctionConfiguration",
+          "lambda:DeleteFunction",
+          "lambda:ListVersionsByFunction",
+          "lambda:PublishVersion",
+          "lambda:CreateAlias",
+          "lambda:UpdateAlias",
+          "lambda:DeleteAlias",
+          "lambda:GetAlias",
+          "lambda:ListAliases",
+          "lambda:TagResource",
+          "lambda:UntagResource",
+          "lambda:ListTags",
+
+          "iam:PassRole",
+
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
           "logs:DescribeLogGroups",
+          "logs:CreateLogStream",
+          "logs:DeleteLogStream",
+          "logs:DescribeLogStreams",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:TagResource",
+          "logs:UntagResource",
+          "logs:ListTagsForResource",
 
           "elasticloadbalancing:DescribeLoadBalancers",
           "elasticloadbalancing:DescribeLoadBalancerAttributes",

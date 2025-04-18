@@ -42,6 +42,11 @@ output "service_discovery_namespace_arn" {
   value = aws_service_discovery_http_namespace.deployment.arn
 }
 
+output "lambda_role_arn" {
+  value      = aws_iam_role.lambda.arn
+  depends_on = [aws_iam_role_policy.lambda]
+}
+
 output "task_role_arn" {
   value      = aws_iam_role.execution.arn
   depends_on = [aws_iam_role_policy.task]
