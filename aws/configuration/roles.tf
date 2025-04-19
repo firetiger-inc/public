@@ -385,6 +385,8 @@ resource "aws_iam_role_policy" "deployment" {
           "lambda:AddPermission",
           "lambda:RemovePermission",
           "lambda:GetPolicy",
+          "lambda:GetProvisionedConcurrencyConfig",
+          "lambda:PutProvisionedConcurrencyConfig",
 
           "iam:PassRole",
 
