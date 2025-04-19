@@ -58,6 +58,8 @@ resource "aws_iam_role_policy" "lambda" {
           "s3:ListBucket",
           "s3:GetBucketLocation",
           "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
         ]
         Resource = [
           aws_s3_bucket.deployment.arn,
@@ -72,6 +74,7 @@ resource "aws_iam_role_policy" "lambda" {
           "glue:GetDatabase",
           "glue:GetTables",
           "glue:GetTable",
+          "glue:UpdateTable",
           "glue:GetPartition",
           "glue:GetPartitions",
           "glue:BatchGetPartition"
@@ -80,6 +83,18 @@ resource "aws_iam_role_policy" "lambda" {
           [data.aws_arn.catalog.arn, aws_glue_catalog_database.iceberg.arn],
           [for _, table in aws_glue_catalog_table.iceberg : table.arn],
         )
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:ListSecretVersionIds",
+        ]
+        Resource = [
+          aws_secretsmanager_secret.ingest_basic_auth.arn,
+          aws_secretsmanager_secret.query_basic_auth.arn,
+        ]
       },
     ]
   })
@@ -390,6 +405,7 @@ resource "aws_iam_role_policy" "deployment" {
           "elasticloadbalancing:DescribeListeners",
           "elasticloadbalancing:DescribeListenerAttributes",
           "elasticloadbalancing:DescribeRules",
+          "elasticloadbalancing:DescribeTargetHealth",
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeTargetGroupAttributes",
           "elasticloadbalancing:DescribeTags",
