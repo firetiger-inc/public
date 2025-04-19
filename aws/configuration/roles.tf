@@ -41,6 +41,7 @@ resource "aws_iam_role_policy" "lambda" {
         ]
         Resource = "*"
       },
+
       {
         Effect = "Allow"
         Action = [
@@ -49,7 +50,37 @@ resource "aws_iam_role_policy" "lambda" {
           "logs:PutLogEvents"
         ]
         Resource = "arn:aws:logs:*:*:*"
-      }
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation",
+          "s3:GetObject",
+        ]
+        Resource = [
+          aws_s3_bucket.deployment.arn,
+          format("%s/*", aws_s3_bucket.deployment.arn)
+        ]
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:GetDatabases",
+          "glue:GetDatabase",
+          "glue:GetTables",
+          "glue:GetTable",
+          "glue:GetPartition",
+          "glue:GetPartitions",
+          "glue:BatchGetPartition"
+        ]
+        Resource = concat(
+          [data.aws_arn.catalog.arn, aws_glue_catalog_database.iceberg.arn],
+          [for _, table in aws_glue_catalog_table.iceberg : table.arn],
+        )
+      },
     ]
   })
 }
