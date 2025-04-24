@@ -18,6 +18,10 @@ output "certificate_arn" {
   value = aws_acm_certificate.deployment.arn
 }
 
+output "cloudfront_certificate_arn" {
+  value = aws_acm_certificate.cloudfront.arn
+}
+
 output "iceberg_namespace" {
   value = aws_s3_bucket.deployment.id
 }

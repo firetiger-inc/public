@@ -1,7 +1,7 @@
 x-service: &service
   image: public.ecr.aws/firetiger/firetiger:latest
   environment: &environment
-  - FT_BUCKET=http://firetiger-storage-server:4317
+  - FT_BUCKET=file:///mnt/storage
   - FT_CATALOG=http://firetiger-catalog-server:4317
   - FT_NAMESPACE=firetiger.docker.compose
   - FT_LOG_FORMAT=cli
@@ -73,7 +73,7 @@ services:
       run catalog server
       --catalog-backend=sqlite3:///mnt/storage/catalog.sqlite?cache=shared
       --catalog-frontend=http://localhost:4317/catalog
-      --storage-backend=http://firetiger-storage-server:4317
+      --storage-backend=file:///mnt/storage
       --storage-frontend=http://localhost:4317/storage
     volumes:
     - storage:/mnt/storage
@@ -83,7 +83,7 @@ services:
     command: |-
       run storage server
       --bucket=file:///mnt/storage
-      --storage-backend=http://firetiger-storage-server:4317
+      --storage-backend=file:///mnt/storage
       --storage-frontend=http://localhost:4317/storage
     volumes:
     - storage:/mnt/storage
