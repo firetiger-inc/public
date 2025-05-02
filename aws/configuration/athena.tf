@@ -10,8 +10,4 @@ resource "aws_athena_workgroup" "deployment" {
       output_location = "s3://${var.bucket}/tmp/athena/"
     }
   }
-
-  tags = {
-    FiretigerDeployment = var.bucket
-  }
 }

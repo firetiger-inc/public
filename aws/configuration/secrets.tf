@@ -8,22 +8,12 @@ resource "aws_secretsmanager_secret" "ingest_basic_auth" {
   name                    = format("firetiger/ingest/basic-auth@%s", aws_s3_bucket.deployment.id)
   description             = "Secret storing the Firetiger ingest basic auth credentials"
   recovery_window_in_days = var.secrets_recovery_window_in_days
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-    FiretigerSecretName = "firetiger/ingest/basic-auth"
-  }
 }
 
 resource "aws_secretsmanager_secret" "query_basic_auth" {
   name                    = format("firetiger/query/basic-auth@%s", aws_s3_bucket.deployment.id)
   description             = "Secret storing the Firetiger query basic auth credentials"
   recovery_window_in_days = var.secrets_recovery_window_in_days
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-    FiretigerSecretName = "firetiger/query/basic-auth"
-  }
 }
 
 # We generate the secret values here so they do not need to appear anywhere in

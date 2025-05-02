@@ -114,11 +114,6 @@ resource "aws_iam_role" "execution" {
       }
     }]
   })
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-    FiretigerRoleName   = "FiretigerExecutionRole"
-  }
 }
 
 resource "aws_iam_role_policy" "execution" {
@@ -192,11 +187,6 @@ resource "aws_iam_role" "task" {
       }
     }]
   })
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-    FiretigerRoleName   = "FiretigerTaskRole"
-  }
 }
 
 resource "aws_iam_role_policy" "task" {
@@ -300,11 +290,6 @@ resource "aws_iam_role" "deployment" {
       }
     ]
   })
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-    FiretigerRoleName   = "FiretigerDeploymentRole"
-  }
 }
 
 resource "aws_iam_role_policy" "deployment" {

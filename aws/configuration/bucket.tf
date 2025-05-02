@@ -8,10 +8,6 @@ module "iceberg_table_metadata" {
 resource "aws_s3_bucket" "deployment" {
   bucket        = var.bucket
   force_destroy = true
-
-  tags = {
-    FiretigerDeployment = var.bucket
-  }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "deployment" {
@@ -37,11 +33,6 @@ resource "aws_s3_object" "initial_table_metadata" {
   key          = each.value.metadata_location
   content      = each.value.metadata
   content_type = "application/json"
-
-  tags = {
-    FiretigerDeployment = each.value.bucket
-    FiretigerTable      = each.value.table
-  }
 }
 
 resource "aws_s3_object" "configuration" {
@@ -67,8 +58,4 @@ resource "aws_s3_object" "configuration" {
       }
     }
   })
-
-  tags = {
-    FiretigerDeployment = var.bucket
-  }
 }

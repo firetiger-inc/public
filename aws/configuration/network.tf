@@ -3,11 +3,6 @@ resource "aws_security_group" "frontend" {
   description = "Security group for the Firetiger frontend load balancer"
   vpc_id      = var.vpc_id
 
-  tags = {
-    FiretigerDeployment    = aws_s3_bucket.deployment.id
-    FiretigerSecurityGroup = "FiretigerFrontend"
-  }
-
   lifecycle {
     create_before_destroy = true
   }
@@ -33,11 +28,6 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ipv4" {
   from_port   = each.value
   to_port     = each.value
   ip_protocol = "tcp"
-
-  tags = {
-    FiretigerDeployment    = aws_s3_bucket.deployment.id
-    FiretigerSecurityGroup = "FiretigerFrontend"
-  }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "allow_ipv6" {
@@ -49,22 +39,12 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ipv6" {
   from_port   = each.value
   to_port     = each.value
   ip_protocol = "tcp"
-
-  tags = {
-    FiretigerDeployment    = aws_s3_bucket.deployment.id
-    FiretigerSecurityGroup = "FiretigerFrontend"
-  }
 }
 
 resource "aws_security_group" "backend" {
   name        = format("FiretigerBackend@%s", aws_s3_bucket.deployment.id)
   description = "Security group for the Firetiger backend services"
   vpc_id      = var.vpc_id
-
-  tags = {
-    FiretigerDeployment    = aws_s3_bucket.deployment.id
-    FiretigerSecurityGroup = "FiretigerBackend"
-  }
 
   lifecycle {
     create_before_destroy = true
@@ -81,11 +61,6 @@ resource "aws_vpc_security_group_ingress_rule" "allow_self" {
 
   ip_protocol                  = "-1"
   referenced_security_group_id = aws_security_group.backend.id
-
-  tags = {
-    FiretigerDeployment    = aws_s3_bucket.deployment.id
-    FiretigerSecurityGroup = "FiretigerBackend"
-  }
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ipv4" {
@@ -94,11 +69,6 @@ resource "aws_vpc_security_group_egress_rule" "allow_ipv4" {
 
   cidr_ipv4   = "0.0.0.0/0"
   ip_protocol = "-1"
-
-  tags = {
-    FiretigerDeployment    = aws_s3_bucket.deployment.id
-    FiretigerSecurityGroup = "FiretigerBackend"
-  }
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_ipv6" {
@@ -107,9 +77,4 @@ resource "aws_vpc_security_group_egress_rule" "allow_ipv6" {
 
   cidr_ipv6   = "::/0"
   ip_protocol = "-1"
-
-  tags = {
-    FiretigerDeployment    = aws_s3_bucket.deployment.id
-    FiretigerSecurityGroup = "FiretigerBackend"
-  }
 }

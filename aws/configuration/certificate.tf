@@ -6,10 +6,6 @@ provider "aws" {
 resource "aws_route53_zone" "deployment" {
   name    = format("%s.firetigerapi.com", var.bucket)
   comment = "DNS zone for the Firetiger records"
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-  }
 }
 
 resource "aws_acm_certificate" "deployment" {
@@ -19,10 +15,6 @@ resource "aws_acm_certificate" "deployment" {
   subject_alternative_names = [
     format("*.%s", aws_route53_zone.deployment.name),
   ]
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-  }
 
   lifecycle {
     create_before_destroy = true
@@ -38,10 +30,6 @@ resource "aws_acm_certificate" "cloudfront" {
   subject_alternative_names = [
     format("*.%s", aws_route53_zone.deployment.name),
   ]
-
-  tags = {
-    FiretigerDeployment = aws_s3_bucket.deployment.id
-  }
 
   lifecycle {
     create_before_destroy = true
