@@ -56,7 +56,7 @@ resource "google_storage_bucket_object" "catalog_table" {
 resource "google_storage_bucket_object" "initial_table_metadata" {
   for_each     = module.iceberg_table_metadata
   bucket       = google_storage_bucket.deployment.name
-  name         = each.value.metadata_location
+  name         = trimprefix(each.value.metadata_location, format("gs://%s", google_storage_bucket.deployment.name))
   content      = each.value.metadata
   content_type = "application/json"
 }
