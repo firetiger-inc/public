@@ -21,23 +21,11 @@ locals {
     "history.expire.min-snapshots-to-keep" = "1"
   }, var.properties)
 
-  metadata_location = format("%s/metadata/000000000-%s.metadata.json", var.table, random_uuid.table.result)
+  metadata_location = format("%s/%s/metadata/000000000-%s.metadata.json", var.bucket, var.table, random_uuid.table.result)
 }
 
 resource "time_static" "table" {}
 resource "random_uuid" "table" {}
-
-output "bucket" {
-  value = var.bucket
-}
-
-output "table" {
-  value = var.table
-}
-
-output "properties" {
-  value = local.properties
-}
 
 output "metadata_location" {
   value = local.metadata_location
