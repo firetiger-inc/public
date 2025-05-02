@@ -30,7 +30,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "deployment" {
 resource "aws_s3_object" "initial_table_metadata" {
   for_each     = module.iceberg_table_metadata
   bucket       = aws_s3_bucket.deployment.id
-  key          = each.value.metadata_location
+  key          = trimprefix(each.value.metadata_location, format("s3://%s/", aws_s3_bucket.deployment.bucket))
   content      = each.value.metadata
   content_type = "application/json"
 }
