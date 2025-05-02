@@ -20,6 +20,8 @@ locals {
     "commit.retry.total-timeout-ms"        = "30000"
     "history.expire.min-snapshots-to-keep" = "1"
   }, var.properties)
+
+  metadata_location = format("%s/metadata/000000000-%s.metadata.json", var.table, random_uuid.table.result)
 }
 
 resource "time_static" "table" {}
@@ -38,7 +40,7 @@ output "properties" {
 }
 
 output "metadata_location" {
-  value = format("%s/metadata/000000000-%s.metadata.json", var.table, random_uuid.table.result)
+  value = local.metadata_location
 }
 
 output "metadata" {
@@ -68,8 +70,11 @@ output "metadata" {
     }]
     snapshots    = []
     snapshot-log = []
-    metadata-log = []
-    refs         = {}
-    properties   = local.properties
+    metadata-log = [{
+      timestamp-ms  = time_static.table.unix * 1000
+      metadata-file = local.metadata_location
+    }]
+    refs       = {}
+    properties = local.properties
   })
 }
