@@ -17,6 +17,7 @@ locals {
     "compute.networkAdmin",
     "certificatemanager.owner",
     "cloudsql.admin",
+    "cloudscheduler.admin",
     "monitoring.admin"
   ]
 
