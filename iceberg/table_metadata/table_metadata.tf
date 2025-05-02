@@ -12,18 +12,14 @@ variable "properties" {
 }
 
 locals {
-  default_properties = {
+  properties = merge({
     "commit.manifest.target-history-count" = "10"
     "commit.retry.num-retries"             = "10"
     "commit.retry.min-wait-ms"             = "10"
     "commit.retry.max-wait-ms"             = "3000"
     "commit.retry.total-timeout-ms"        = "30000"
     "history.expire.min-snapshots-to-keep" = "1"
-  }
-
-  properties = merge(local.default_properties, var.properties, {
-    "write.data.path" = format("%s/%s/data", var.bucket, var.table)
-  })
+  }, var.properties)
 }
 
 resource "time_static" "table" {}
