@@ -1,0 +1,277 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Firetiger EventBridge ECS Integration - Capture ECS OutOfMemory events as logs using EventBridge API Destinations"
+
+# ==============================================================================
+# Template Parameters
+# ==============================================================================
+
+Parameters:
+  FiretigerEndpoint:
+    Type: String
+    Description: "Firetiger ingest server endpoint (e.g., https://ingest.my-deployment.firetigerapi.com)"
+
+  FiretigerUsername:
+    Type: String
+    Description: "Username for basic authentication to Firetiger ingest server"
+    Default: ""
+
+  FiretigerPassword:
+    Type: String
+    Description: "Password for basic authentication to Firetiger ingest server"
+    Default: ""
+    NoEcho: true
+
+  EventBridgeRuleName:
+    Type: String
+    Description: "Name for the EventBridge rule"
+    Default: "firetiger-ecs-task-state-change"
+
+  EventPattern:
+    Type: String
+    Description: "EventBridge rule pattern to match ECS task state change events (JSON string)"
+    Default: |
+      {
+        "source": ["aws.ecs"],
+        "detail-type": ["ECS Task State Change"],
+        "detail": {
+          "lastStatus": ["STOPPED"],
+          "stoppedReason": [
+            {"prefix": "OutOfMemoryError"},
+            {"prefix": "OutOfMemory"}
+          ]
+        }
+      }
+
+  InvocationRatePerSecond:
+    Type: Number
+    Description: "Maximum number of invocations per second for the API destination"
+    Default: 1
+    MinValue: 1
+    MaxValue: 300
+
+  EnableDeadLetterQueue:
+    Type: String
+    Description: "Enable dead letter queue for failed events"
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+  DeadLetterQueueRetentionSeconds:
+    Type: Number
+    Description: "Dead letter queue message retention period in seconds"
+    Default: 86400  # 1 day
+    MinValue: 60    # 1 minute
+    MaxValue: 1209600  # 14 days
+
+  EventBridgeBus:
+    Type: String
+    Description: "EventBridge bus to use (default or custom bus name)"
+    Default: "default"
+
+# ==============================================================================
+# Conditions
+# ==============================================================================
+
+Conditions:
+  HasBasicAuth: !And
+    - !Not [!Equals [!Ref FiretigerUsername, ""]]
+    - !Not [!Equals [!Ref FiretigerPassword, ""]]
+
+  CreateDeadLetterQueue: !Equals [!Ref EnableDeadLetterQueue, "true"]
+
+# ==============================================================================
+# Resources
+# ==============================================================================
+
+Resources:
+  # Dead Letter Queue for failed events (optional)
+  EventDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Condition: CreateDeadLetterQueue
+    Properties:
+      QueueName: !Sub "${AWS::StackName}-eventbridge-ecs-dlq"
+      MessageRetentionPeriod: !Ref DeadLetterQueueRetentionSeconds
+      VisibilityTimeout: 60
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+        - Key: Purpose
+          Value: EventBridge-ECS-OOM-Events
+
+  # EventBridge Connection for authentication to Firetiger endpoint
+  FiretigerConnection:
+    Type: AWS::Events::Connection
+    Properties:
+      Name: !Sub "${AWS::StackName}-firetiger-connection"
+      Description: "Connection to Firetiger ingest server for ECS OOM events"
+      AuthorizationType: !If [HasBasicAuth, "BASIC", "API_KEY"]
+      AuthParameters: !If
+        - HasBasicAuth
+        - BasicAuthParameters:
+            Username: !Ref FiretigerUsername
+            Password: !Ref FiretigerPassword
+        - ApiKeyAuthParameters:
+            ApiKeyName: "Authorization"
+            ApiKeyValue: "Bearer none"
+
+  # EventBridge API Destination pointing to Firetiger ingest server
+  FiretigerApiDestination:
+    Type: AWS::Events::ApiDestination
+    Properties:
+      Name: !Sub "${AWS::StackName}-firetiger-destination"
+      Description: "Firetiger ingest server endpoint for ECS OOM events"
+      ConnectionArn: !GetAtt FiretigerConnection.Arn
+      HttpMethod: "POST"
+      InvocationEndpoint: !Sub "${FiretigerEndpoint}/aws/eventbridge/ecs-task-state-change"
+      InvocationRateLimitPerSecond: !Ref InvocationRatePerSecond
+
+  # IAM Role for EventBridge to invoke the API destination and SQS
+  EventBridgeRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-eventbridge-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: EventBridgeApiDestinationPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:InvokeApiDestination
+                Resource: !GetAtt FiretigerApiDestination.Arn
+              - !If
+                - CreateDeadLetterQueue
+                - Effect: Allow
+                  Action:
+                    - sqs:SendMessage
+                  Resource: !GetAtt EventDeadLetterQueue.Arn
+                - !Ref AWS::NoValue
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+
+  # EventBridge Rule to capture ECS Task State Changes with configurable pattern
+  ECSTaskStateChangeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Ref EventBridgeRuleName
+      Description: "Capture ECS task state change events and send to Firetiger"
+      EventBusName: !Ref EventBridgeBus
+      State: "ENABLED"
+      EventPattern: !Ref EventPattern
+      Targets:
+        - Id: "FiretigerApiDestination"
+          Arn: !GetAtt FiretigerApiDestination.Arn
+          HttpParameters:
+            HeaderParameters:
+              "Content-Type": "application/json"
+              "User-Agent": "AWS-EventBridge/1.0"
+            QueryStringParameters: {}
+          RoleArn: !GetAtt EventBridgeRole.Arn
+          RetryPolicy:
+            MaximumRetryAttempts: 0
+            MaximumEventAgeInSeconds: 3600
+          DeadLetterConfig: !If
+            - CreateDeadLetterQueue
+            - Arn: !GetAtt EventDeadLetterQueue.Arn
+            - !Ref AWS::NoValue
+
+  # CloudWatch Log Group for monitoring EventBridge rule metrics
+  EventBridgeLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/events/rule/${EventBridgeRuleName}"
+      RetentionInDays: 7
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+
+# ==============================================================================
+# Outputs
+# ==============================================================================
+
+Outputs:
+  EventBridgeRuleName:
+    Description: "Name of the EventBridge rule capturing ECS task state change events"
+    Value: !Ref ECSTaskStateChangeRule
+    Export:
+      Name: !Sub "${AWS::StackName}-EventBridgeRuleName"
+
+  EventBridgeRuleArn:
+    Description: "ARN of the EventBridge rule"
+    Value: !GetAtt ECSTaskStateChangeRule.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-EventBridgeRuleArn"
+
+  ApiDestinationEndpoint:
+    Description: "Firetiger API destination endpoint"
+    Value: !Sub "${FiretigerEndpoint}/aws/eventbridge/ecs-task-state-change"
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiDestinationEndpoint"
+
+  ApiDestinationArn:
+    Description: "ARN of the Firetiger API destination"
+    Value: !GetAtt FiretigerApiDestination.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ApiDestinationArn"
+
+  ConnectionArn:
+    Description: "ARN of the EventBridge connection"
+    Value: !GetAtt FiretigerConnection.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ConnectionArn"
+
+  DeadLetterQueueUrl:
+    Condition: CreateDeadLetterQueue
+    Description: "URL of the dead letter queue for failed events"
+    Value: !Ref EventDeadLetterQueue
+    Export:
+      Name: !Sub "${AWS::StackName}-DeadLetterQueueUrl"
+
+  DeadLetterQueueArn:
+    Condition: CreateDeadLetterQueue
+    Description: "ARN of the dead letter queue"
+    Value: !GetAtt EventDeadLetterQueue.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-DeadLetterQueueArn"
+
+  MonitoringDashboardUrl:
+    Description: "CloudWatch dashboard URL to monitor EventBridge rule metrics"
+    Value: !Sub |
+      https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${AWS::StackName}-ECS-OOM-Events
+
+  SetupCompleteMessage:
+    Description: "Setup completion message with next steps"
+    Value: !Sub |
+      🎉 Firetiger EventBridge ECS Integration deployed successfully!
+
+      EventBridge Rule: ${ECSTaskStateChangeRule}
+      API Destination: ${FiretigerEndpoint}/aws/eventbridge/ecs-task-state-change
+      Rate Limit: ${InvocationRatePerSecond} events/second
+      Dead Letter Queue: ${EnableDeadLetterQueue}
+
+      Next steps:
+      1. Verify ECS task state change events are appearing in Firetiger at: ${FiretigerEndpoint}
+      2. Monitor EventBridge rule metrics in CloudWatch
+      3. Check dead letter queue for any failed deliveries (if enabled)
+      4. Adjust rate limits if needed based on your ECS task volume
+      5. Modify the EventPattern parameter to capture different task state changes as needed
+
+      🔗 EventBridge Rules Console: https://${AWS::Region}.console.aws.amazon.com/events/home?region=${AWS::Region}#/rules
+      📊 CloudWatch Logs: https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#logsV2:log-groups/log-group/$252Faws$252Fevents$252Frule$252F${EventBridgeRuleName}
+
+      For troubleshooting, see the deployment README.md file.
