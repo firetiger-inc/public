@@ -10,7 +10,7 @@ terraform {
 
   backend "s3" {
     bucket = "firetiger-terraform"
-    key    = "public/aws/ingest-cloudawtch-logs/terraform.tfstate"
+    key    = "public/ingest/aws/cloudwatch/logs/terraform.tfstate"
     region = "us-west-2"
   }
 
@@ -52,7 +52,7 @@ data "archive_file" "filter_manager" {
 # Upload Ingester Lambda package to S3
 resource "aws_s3_object" "ingester_lambda" {
   bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "aws/ingest-cloudwatch-logs/lambda/ingester.zip"
+  key    = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
   source = data.archive_file.ingester.output_path
 
   content_type = "application/zip"
@@ -69,7 +69,7 @@ resource "aws_s3_object" "ingester_lambda" {
 # Upload Filter Manager Lambda package to S3
 resource "aws_s3_object" "filter_manager_lambda" {
   bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "aws/ingest-cloudwatch-logs/lambda/filter_manager.zip"
+  key    = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
   source = data.archive_file.filter_manager.output_path
 
   content_type = "application/zip"
@@ -86,7 +86,7 @@ resource "aws_s3_object" "filter_manager_lambda" {
 # Upload CloudFormation template to S3
 resource "aws_s3_object" "cloudformation_template" {
   bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "aws/ingest-cloudwatch-logs/cloudformation-template.yaml"
+  key    = "ingest/aws/cloudwatch/logs/cloudformation-template.yaml"
   source = "${path.module}/cloudformation/template.yaml"
 
   content_type = "text/yaml"

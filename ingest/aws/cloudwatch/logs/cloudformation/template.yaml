@@ -126,7 +126,7 @@ Resources:
       Handler: index.lambda_handler
       Code:
         S3Bucket: firetiger-public
-        S3Key: aws/ingest-cloudwatch-logs/lambda/ingester.zip
+        S3Key: ingest/aws/cloudwatch/logs/lambda/ingester.zip
       Environment:
         Variables:
           FT_EXPORTER_ENDPOINT: !Ref FiretigerEndpoint
@@ -177,7 +177,7 @@ Resources:
       Timeout: 300
       Code:
         S3Bucket: firetiger-public
-        S3Key: aws/ingest-cloudwatch-logs/lambda/filter_manager.zip
+        S3Key: ingest/aws/cloudwatch/logs/lambda/filter_manager.zip
 
   # IAM Role for Subscription Filter Manager
   SubscriptionFilterManagerRole:

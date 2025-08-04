@@ -69,7 +69,7 @@ resource "aws_lambda_function" "cloudwatch_logs_ingester" {
   architectures = ["x86_64"]
 
   s3_bucket         = "firetiger-public"
-  s3_key            = "aws/ingest-cloudwatch-logs/lambda/ingester.zip"
+  s3_key            = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
   source_code_hash  = data.aws_s3_object.lambda_code.etag
 
   environment {
@@ -97,7 +97,7 @@ resource "aws_lambda_function" "cloudwatch_logs_ingester" {
 # Reference Lambda deployment package from S3
 data "aws_s3_object" "lambda_code" {
   bucket = "firetiger-public"
-  key    = "aws/ingest-cloudwatch-logs/lambda/ingester.zip"
+  key    = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
 }
 
 # ==============================================================================
@@ -170,7 +170,7 @@ resource "aws_lambda_function" "subscription_filter_manager" {
   timeout      = 300
 
   s3_bucket         = "firetiger-public"
-  s3_key            = "aws/ingest-cloudwatch-logs/lambda/filter_manager.zip"
+  s3_key            = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
   source_code_hash  = data.aws_s3_object.filter_manager_code.etag
 
   tags = local.tags
@@ -179,7 +179,7 @@ resource "aws_lambda_function" "subscription_filter_manager" {
 # Reference Filter Manager Lambda deployment package from S3
 data "aws_s3_object" "filter_manager_code" {
   bucket = "firetiger-public"
-  key    = "aws/ingest-cloudwatch-logs/lambda/filter_manager.zip"
+  key    = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
 }
 
 # ==============================================================================

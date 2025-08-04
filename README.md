@@ -109,11 +109,24 @@ D select * from iceberg_scan('http://localhost:4317/storage/logs');
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Cloud Integrations
+## Ingest Integrations
 
 This repository also contains cloud provider integrations for ingesting logs and events into Firetiger.
 
-### AWS Integrations
+### Available Integrations
+- **AWS CloudWatch Logs** (`ingest/aws/cloudwatch/logs/`) - Stream CloudWatch logs to Firetiger via Lambda and subscription filters
+- **AWS ECS Events** (`ingest/aws/ecs/events/`) - Capture ECS task state changes (OOM, failures) via EventBridge
 
-- **CloudWatch Logs** (`aws/ingest-cloudwatch-logs/`) - Stream CloudWatch logs to Firetiger via Lambda and subscription filters
-- **ECS Events** (`aws/ingest-ecs-events/`) - Capture ECS task state changes (OOM, failures) via EventBridge
+### Quick Start
+
+```bash
+# AWS CloudWatch Logs
+cd ingest/aws/cloudwatch/logs/terraform
+terraform init && terraform apply
+
+# AWS ECS Events  
+cd ingest/aws/ecs/events/terraform
+terraform init && terraform apply
+```
+
+Each integration supports multiple deployment methods including one-click CloudFormation deployment. See the individual README files for detailed configuration options.

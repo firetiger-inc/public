@@ -10,7 +10,7 @@ terraform {
 
   backend "s3" {
     bucket = "firetiger-terraform"
-    key    = "public/aws/ingest-ecs-events/terraform.tfstate"
+    key    = "public/ingest/aws/ecs/events/terraform.tfstate"
     region = "us-west-2"
   }
 
@@ -29,7 +29,7 @@ data "aws_s3_bucket" "firetiger_public" {
 # Upload CloudFormation template to S3
 resource "aws_s3_object" "cloudformation_template" {
   bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "aws/ingest-ecs-events/cloudformation-template.yaml"
+  key    = "ingest/aws/ecs/events/cloudformation-template.yaml"
   source = "${path.module}/cloudformation/template.yaml"
 
   content_type = "text/yaml"
