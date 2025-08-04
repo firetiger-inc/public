@@ -1,4 +1,5 @@
 # public
+
 This repository exposes public resources used to build on Firetiger
 
 ## Testing
@@ -9,19 +10,21 @@ query layers. In this mode, the storage backend is a directory on the local
 file system.
 
 The stack can be used as an OpenTelemetry collector endpoint, listening for
-OTLP/GRPC and OTLP/HTTP requests on http://localhost:4317
+OTLP/GRPC and OTLP/HTTP requests on <http://localhost:4317>
 
 The stack deploys a traefik API gateway, mimicking the Firetiger configuration
 in a cloud environment, as well as a preconfigured Grafana console accessible
-at http://localhost:8321
+at <http://localhost:8321>
 
 To start the stack:
+
 ```sh
 docker pull --platform linux/amd64 public.ecr.aws/firetiger/firetiger:latest
 docker compose up --detach
 ```
 
 To tear down the stack:
+
 ```sh
 docker compose down
 ```
@@ -105,8 +108,3 @@ D select * from iceberg_scan('http://localhost:4317/storage/logs');
 │ 10 rows                                                                                                                    12 columns (9 shown) │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
-
-## Deployment
-
-- [**AWS**](./aws/configuration/README.md)
-- [**GCP**](./gcp/configuration/README.md)
