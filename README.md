@@ -108,3 +108,12 @@ D select * from iceberg_scan('http://localhost:4317/storage/logs');
 │ 10 rows                                                                                                                    12 columns (9 shown) │
 └─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
+
+## Cloud Integrations
+
+This repository also contains cloud provider integrations for ingesting logs and events into Firetiger.
+
+### AWS Integrations
+
+- **CloudWatch Logs** (`aws/ingest-cloudwatch-logs/`) - Stream CloudWatch logs to Firetiger via Lambda and subscription filters
+- **ECS Events** (`aws/ingest-ecs-events/`) - Capture ECS task state changes (OOM, failures) via EventBridge
