@@ -15,7 +15,7 @@ This example demonstrates how to deploy the Firetiger ECS Events integration usi
 ## Configuration
 
 The example is pre-configured to capture:
-- All STOPPED tasks in the `firetiger-for-firetiger` cluster
+- All STOPPED tasks in the `production-cluster`
 - 20 events per second rate limit
 - Dead letter queue with 1-day retention
 
@@ -30,7 +30,7 @@ The current configuration captures all STOPPED tasks. For complete event structu
   "detail": {
     "lastStatus": ["STOPPED"],
     "clusterArn": [
-      {"suffix": ":cluster/firetiger-for-firetiger"}
+      {"suffix": ":cluster/production-cluster"}
     ]
   }
 }
@@ -100,7 +100,7 @@ After deployment:
    aws cloudwatch get-metric-statistics \
      --namespace AWS/Events \
      --metric-name SuccessfulRuleMatches \
-     --dimensions Name=Rule,Value=firetiger-ecs-task-stopped-events \
+     --dimensions Name=Rule,Value=my-company-ecs-task-stopped-events \
      --start-time $(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%S) \
      --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
      --period 300 \
@@ -110,7 +110,7 @@ After deployment:
 3. Check dead letter queue for failures:
    ```bash
    aws sqs get-queue-attributes \
-     --queue-url https://sqs.us-east-1.amazonaws.com/YOUR-ACCOUNT/firetiger-for-firetiger-eventbridge-ecs-dlq \
+     --queue-url https://sqs.us-east-1.amazonaws.com/YOUR-ACCOUNT/my-company-ecs-eventbridge-ecs-dlq \
      --attribute-names ApproximateNumberOfMessages
    ```
 
@@ -121,7 +121,7 @@ Generate a test event to verify the integration:
 ```bash
 # Stop a test task to generate an event
 aws ecs stop-task \
-  --cluster firetiger-for-firetiger \
+  --cluster production-cluster \
   --task <task-arn> \
   --reason "Testing Firetiger integration"
 ```

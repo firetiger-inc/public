@@ -21,18 +21,18 @@ module "firetiger_ecs_events" {
   source = "github.com/firetiger-inc/public//ingest/aws/ecs/events/terraform?ref=main"
 
   # Naming and identification
-  name_prefix = "firetiger-for-firetiger"
+  name_prefix = "my-company-ecs"
 
   # Firetiger endpoint configuration
-  firetiger_endpoint = "https://ingest.firetiger-for-firetiger.firetigerapi.com"
-  firetiger_username = "firetiger-for-firetiger"
+  firetiger_endpoint = "https://ingest.my-deployment.firetigerapi.com"
+  firetiger_username = "my-username"
   firetiger_password = "your-password-here" # Replace with your actual password
 
   # EventBridge configuration
-  event_bridge_rule_name = "firetiger-ecs-task-stopped-events"
+  event_bridge_rule_name = "my-company-ecs-task-stopped-events"
 
   # Event pattern to capture ECS task state changes
-  # This captures all STOPPED tasks in the firetiger-for-firetiger cluster
+  # This captures all STOPPED tasks in the production cluster
   event_pattern = jsonencode({
     source      = ["aws.ecs"]
     detail-type = ["ECS Task State Change"]
@@ -40,7 +40,7 @@ module "firetiger_ecs_events" {
       lastStatus = ["STOPPED"]
       clusterArn = [
         {
-          suffix = ":cluster/firetiger-for-firetiger"
+          suffix = ":cluster/production-cluster"
         }
       ]
     }

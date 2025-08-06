@@ -65,7 +65,7 @@ After deployment:
 1. Check the deployed resources in AWS Console
 2. Monitor Lambda logs for any errors:
    ```bash
-   aws logs tail /aws/lambda/firetiger-for-firetiger-cloudwatch-logs-ingester --follow
+   aws logs tail /aws/lambda/my-company-logs-cloudwatch-logs-ingester --follow
    ```
 
 ## Troubleshooting

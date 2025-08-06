@@ -21,11 +21,11 @@ module "firetiger_cloudwatch_logs" {
   source = "github.com/firetiger-inc/public//ingest/aws/cloudwatch/logs/terraform?ref=main"
 
   # Naming and identification
-  name_prefix = "firetiger-for-firetiger"
+  name_prefix = "my-company-logs"
 
   # Firetiger endpoint configuration
-  firetiger_endpoint = "https://ingest.firetiger-for-firetiger.firetigerapi.com"
-  firetiger_username = "firetiger-for-firetiger"
+  firetiger_endpoint = "https://ingest.my-deployment.firetigerapi.com"
+  firetiger_username = "my-username"
   firetiger_password = "your-password-here" # Replace with your actual password
 
   # Log group monitoring configuration
