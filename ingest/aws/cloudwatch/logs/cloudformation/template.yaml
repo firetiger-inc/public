@@ -31,14 +31,14 @@ Parameters:
     Description: "CloudWatch Logs filter pattern (empty for all logs)"
     Default: ""
 
-  LambdaTimeout:
+  LambdaTimeoutSeconds:
     Type: Number
     Description: "Lambda function timeout in seconds"
     Default: 300
     MinValue: 60
     MaxValue: 900
 
-  LambdaMemorySize:
+  LambdaMemorySizeMb:
     Type: Number
     Description: "Lambda function memory size in MB"
     Default: 256
@@ -134,8 +134,8 @@ Resources:
             !If [HasBasicAuth, !Ref FiretigerUsername, !Ref "AWS::NoValue"]
           FT_EXPORTER_BASIC_AUTH_PASSWORD:
             !If [HasBasicAuth, !Ref FiretigerPassword, !Ref "AWS::NoValue"]
-      Timeout: !Ref LambdaTimeout
-      MemorySize: !Ref LambdaMemorySize
+      Timeout: !Ref LambdaTimeoutSeconds
+      MemorySize: !Ref LambdaMemorySizeMb
       Architectures:
         - x86_64
       LoggingConfig:

@@ -64,8 +64,8 @@ resource "aws_lambda_function" "cloudwatch_logs_ingester" {
   role         = aws_iam_role.lambda_execution_role.arn
   runtime      = "python3.13"
   handler      = "index.lambda_handler"
-  timeout      = var.lambda_timeout
-  memory_size  = var.lambda_memory_size
+  timeout      = var.lambda_timeout_seconds
+  memory_size  = var.lambda_memory_size_mb
   architectures = ["x86_64"]
 
   s3_bucket         = "firetiger-public"

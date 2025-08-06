@@ -34,24 +34,24 @@ variable "subscription_filter_pattern" {
   default     = ""
 }
 
-variable "lambda_timeout" {
+variable "lambda_timeout_seconds" {
   type        = number
   description = "Lambda function timeout in seconds"
   default     = 300
   
   validation {
-    condition     = var.lambda_timeout >= 60 && var.lambda_timeout <= 900
+    condition     = var.lambda_timeout_seconds >= 60 && var.lambda_timeout_seconds <= 900
     error_message = "Lambda timeout must be between 60 and 900 seconds."
   }
 }
 
-variable "lambda_memory_size" {
+variable "lambda_memory_size_mb" {
   type        = number
   description = "Lambda function memory size in MB"
   default     = 256
   
   validation {
-    condition     = var.lambda_memory_size >= 128 && var.lambda_memory_size <= 10240
+    condition     = var.lambda_memory_size_mb >= 128 && var.lambda_memory_size_mb <= 10240
     error_message = "Lambda memory size must be between 128 and 10240 MB."
   }
 }

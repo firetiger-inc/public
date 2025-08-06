@@ -82,8 +82,8 @@ aws cloudformation create-stack \
 - `firetiger_password` / `FiretigerPassword` - Basic auth password
 - `log_group_patterns` / `LogGroupPatterns` - Patterns to match log groups (default: "*")
 - `subscription_filter_pattern` / `SubscriptionFilterPattern` - CloudWatch filter pattern
-- `lambda_timeout` / `LambdaTimeout` - Lambda timeout in seconds (default: 300)
-- `lambda_memory_size` / `LambdaMemorySize` - Lambda memory in MB (default: 256)
+- `lambda_timeout_seconds` / `LambdaTimeoutSeconds` - Lambda timeout in seconds (default: 300)
+- `lambda_memory_size_mb` / `LambdaMemorySizeMb` - Lambda memory in MB (default: 256)
 - `log_retention_days` / `LogRetentionDays` - Lambda log retention (default: 7)
 
 ## Log Group Patterns
@@ -119,7 +119,7 @@ Firetiger Ingest API
    - Ensure log groups match patterns
 
 2. **Lambda timeouts**
-   - Increase `lambda_timeout` parameter
+   - Increase `lambda_timeout_seconds` parameter
    - Check network connectivity to Firetiger
 
 3. **Subscription filters not created**
