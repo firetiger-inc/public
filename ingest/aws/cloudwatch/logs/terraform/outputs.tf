@@ -14,13 +14,13 @@ output "lambda_log_group_name" {
 }
 
 output "monitored_log_groups" {
-  description = "Number of CloudWatch log groups being monitored"
-  value       = aws_cloudformation_stack.subscription_filter_manager.outputs["MonitoredLogGroups"]
+  description = "List of CloudWatch log groups being monitored"
+  value       = local.matching_log_groups
 }
 
 output "filter_count" {
   description = "Number of subscription filters created"
-  value       = aws_cloudformation_stack.subscription_filter_manager.outputs["FilterCount"]
+  value       = length(local.matching_log_groups)
 }
 
 output "setup_complete_message" {
@@ -29,7 +29,7 @@ output "setup_complete_message" {
     🎉 Firetiger CloudWatch Logs integration deployed successfully!
 
     Lambda Function: ${aws_lambda_function.cloudwatch_logs_ingester.function_name}
-    Monitored Log Groups: ${aws_cloudformation_stack.subscription_filter_manager.outputs["MonitoredLogGroups"]}
+    Monitored Log Groups: ${length(local.matching_log_groups)}
 
     Next steps:
     1. Verify logs are appearing in Firetiger at: ${var.firetiger_endpoint}

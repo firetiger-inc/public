@@ -4,10 +4,9 @@
 
 locals {
   has_basic_auth = var.firetiger_username != "" && var.firetiger_password != ""
-  
+
   lambda_function_name = "${var.name_prefix}-cloudwatch-logs-ingester"
-  subscription_filter_manager_name = "${var.name_prefix}-subscription-filter-manager"
-  
+
   tags = {
     ManagedBy = "Terraform"
     Project   = "Firetiger"
@@ -62,16 +61,16 @@ resource "aws_cloudwatch_log_group" "lambda_log_group" {
 
 resource "aws_lambda_function" "cloudwatch_logs_ingester" {
   function_name = local.lambda_function_name
-  role         = aws_iam_role.lambda_execution_role.arn
-  runtime      = "python3.13"
-  handler      = "index.lambda_handler"
-  timeout      = var.lambda_timeout_seconds
-  memory_size  = var.lambda_memory_size_mb
+  role          = aws_iam_role.lambda_execution_role.arn
+  runtime       = "python3.13"
+  handler       = "index.lambda_handler"
+  timeout       = var.lambda_timeout_seconds
+  memory_size   = var.lambda_memory_size_mb
   architectures = ["x86_64"]
 
-  s3_bucket         = "firetiger-public"
-  s3_key            = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
-  source_code_hash  = data.aws_s3_object.lambda_code.etag
+  s3_bucket        = "firetiger-public"
+  s3_key           = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
+  source_code_hash = data.aws_s3_object.lambda_code.etag
 
   environment {
     variables = merge(
@@ -106,116 +105,45 @@ data "aws_s3_object" "lambda_code" {
 # ==============================================================================
 
 resource "aws_lambda_permission" "cloudwatch_logs_lambda_permission" {
-  statement_id  = "AllowExecutionFromCloudWatchLogs"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.cloudwatch_logs_ingester.function_name
-  principal     = "logs.amazonaws.com"
+  statement_id   = "AllowExecutionFromCloudWatchLogs"
+  action         = "lambda:InvokeFunction"
+  function_name  = aws_lambda_function.cloudwatch_logs_ingester.function_name
+  principal      = "logs.amazonaws.com"
   source_account = data.aws_caller_identity.current.account_id
 }
 
 # ==============================================================================
-# IAM Role for Subscription Filter Manager
+# Data sources for log group discovery and subscription filter management
 # ==============================================================================
 
-resource "aws_iam_role" "subscription_filter_manager_role" {
-  name = "${var.name_prefix}-subscription-filter-manager-role"
+# Get all log groups in the account
+data "aws_cloudwatch_log_groups" "all" {}
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
-
-  tags = local.tags
-}
-
-resource "aws_iam_role_policy" "subscription_filter_manager_cloudwatch_logs" {
-  name = "CloudWatchLogsAccess"
-  role = aws_iam_role.subscription_filter_manager_role.id
-  
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:DescribeLogGroups",
-          "logs:PutSubscriptionFilter",
-          "logs:DeleteSubscriptionFilter",
-          "logs:DescribeSubscriptionFilters"
-        ]
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "subscription_filter_manager_role_basic" {
-  role       = aws_iam_role.subscription_filter_manager_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+# Filter log groups based on patterns
+locals {
+  # Convert patterns to regex and filter log groups
+  matching_log_groups = [
+    for log_group in data.aws_cloudwatch_log_groups.all.log_group_names : log_group
+    if anytrue([
+      for pattern in var.log_group_patterns :
+      pattern == "*" || can(regex(replace(pattern, "*", ".*"), log_group))
+    ])
+  ]
 }
 
 # ==============================================================================
-# Lambda function to manage subscription filters
+# Subscription filters for matching log groups
 # ==============================================================================
 
-resource "aws_lambda_function" "subscription_filter_manager" {
-  function_name = local.subscription_filter_manager_name
-  role         = aws_iam_role.subscription_filter_manager_role.arn
-  runtime      = "python3.13"
-  handler      = "index.lambda_handler"
-  timeout      = 300
+# Create subscription filters for matching log groups
+resource "aws_cloudwatch_log_subscription_filter" "firetiger_filters" {
+  for_each = toset(local.matching_log_groups)
 
-  s3_bucket         = "firetiger-public"
-  s3_key            = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
-  source_code_hash  = data.aws_s3_object.filter_manager_code.etag
+  name            = "firetiger-${var.name_prefix}-${replace(replace(each.key, "/", "-"), "_", "-")}"
+  log_group_name  = each.key
+  filter_pattern  = var.subscription_filter_pattern
+  destination_arn = aws_lambda_function.cloudwatch_logs_ingester.arn
 
-  tags = local.tags
+  depends_on = [aws_lambda_permission.cloudwatch_logs_lambda_permission]
 }
 
-# Reference Filter Manager Lambda deployment package from S3
-data "aws_s3_object" "filter_manager_code" {
-  bucket = "firetiger-public"
-  key    = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
-}
-
-# ==============================================================================
-# Custom Resource to create subscription filters for matching log groups
-# ==============================================================================
-
-resource "aws_cloudformation_stack" "subscription_filter_manager" {
-  name = "${var.name_prefix}-subscription-filters"
-  
-  template_body = jsonencode({
-    AWSTemplateFormatVersion = "2010-09-09"
-    Resources = {
-      SubscriptionFilterManager = {
-        Type = "AWS::CloudFormation::CustomResource"
-        Properties = {
-          ServiceToken = aws_lambda_function.subscription_filter_manager.arn
-          LambdaArn = aws_lambda_function.cloudwatch_logs_ingester.arn
-          FilterPattern = var.subscription_filter_pattern
-          LogGroupPatterns = var.log_group_patterns
-          StackName = var.name_prefix
-        }
-      }
-    }
-    Outputs = {
-      FilterCount = {
-        Value = { "Fn::GetAtt" = ["SubscriptionFilterManager", "FilterCount"] }
-      }
-      MonitoredLogGroups = {
-        Value = { "Fn::GetAtt" = ["SubscriptionFilterManager", "MonitoredLogGroups"] }
-      }
-    }
-  })
-  
-  tags = local.tags
-}

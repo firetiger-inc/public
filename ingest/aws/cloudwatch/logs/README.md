@@ -6,7 +6,7 @@ Stream AWS CloudWatch logs to Firetiger in real-time using Lambda functions and 
 
 This integration deploys:
 - Lambda function to process and forward logs
-- Subscription filters on specified log groups
+- Subscription filters automatically created on matching log groups
 - IAM roles and permissions
 - CloudWatch log group for Lambda logs
 
@@ -14,9 +14,9 @@ This integration deploys:
 
 ```
 cloudwatch-logs/
-├── src/                      # Shared Lambda source code
+├── src/                      # Lambda source code
 │   ├── ingester.py          # Main Lambda function
-│   └── filter_manager.py    # Subscription filter manager
+│   └── filter_manager.py    # Legacy filter manager (CloudFormation only)
 ├── terraform/               # Terraform deployment module
 ├── cloudformation/          # CloudFormation deployment
 ├── upload.tf                # Terraform config to upload Lambda packages to S3
@@ -36,6 +36,8 @@ If you're contributing changes to the Lambda code, upload new packages using Ter
 terraform init
 terraform apply -target=aws_s3_object.ingester_lambda -target=aws_s3_object.filter_manager_lambda
 ```
+
+**Note**: The Terraform module now manages subscription filters natively and only uses the ingester Lambda. The filter_manager Lambda is only used by the CloudFormation deployment.
 
 ## Deployment Options
 
