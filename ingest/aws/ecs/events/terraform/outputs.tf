@@ -35,7 +35,7 @@ output "dead_letter_queue_arn" {
 
 output "monitoring_dashboard_url" {
   description = "CloudWatch dashboard URL to monitor EventBridge rule metrics"
-  value       = "https://${data.aws_region.current.id}.console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.id}#dashboards:name=${var.name_prefix}-ECS-OOM-Events"
+  value       = "https://${data.aws_region.current.id}.console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.id}#dashboards:name=${var.name_prefix}-ECS-Events"
 }
 
 output "setup_complete_message" {

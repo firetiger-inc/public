@@ -26,9 +26,7 @@ resource "aws_sqs_queue" "event_dead_letter_queue" {
   message_retention_seconds  = var.dead_letter_queue_retention_seconds
   visibility_timeout_seconds = 60
 
-  tags = merge(local.tags, {
-    Purpose = "EventBridge-ECS-OOM-Events"
-  })
+  tags = local.tags
 }
 
 # ==============================================================================
@@ -37,7 +35,7 @@ resource "aws_sqs_queue" "event_dead_letter_queue" {
 
 resource "aws_cloudwatch_event_connection" "firetiger_connection" {
   name        = "${var.name_prefix}-firetiger-connection"
-  description = "Connection to Firetiger ingest server for ECS OOM events"
+  description = "Connection to Firetiger ingest server for ECS events"
 
   authorization_type = local.has_basic_auth ? "BASIC" : "API_KEY"
 
@@ -66,7 +64,7 @@ resource "aws_cloudwatch_event_connection" "firetiger_connection" {
 
 resource "aws_cloudwatch_event_api_destination" "firetiger_api_destination" {
   name                             = "${var.name_prefix}-firetiger-destination"
-  description                      = "Firetiger ingest server endpoint for ECS OOM events"
+  description                      = "Firetiger ingest server endpoint for ECS events"
   invocation_endpoint              = "${var.firetiger_endpoint}/aws/eventbridge/ecs-task-state-change"
   http_method                      = "POST"
   invocation_rate_limit_per_second = var.invocation_rate_per_second
@@ -142,14 +140,6 @@ resource "aws_cloudwatch_event_target" "firetiger_api_destination_target" {
   target_id      = "FiretigerApiDestination"
   arn            = aws_cloudwatch_event_api_destination.firetiger_api_destination.arn
   role_arn       = aws_iam_role.eventbridge_role.arn
-
-  http_parameters {
-    header_parameters = {
-      "Content-Type" = "application/json"
-      "User-Agent"   = "AWS-EventBridge/1.0"
-    }
-    query_string_parameters = {}
-  }
 
   retry_policy {
     maximum_retry_attempts       = 0

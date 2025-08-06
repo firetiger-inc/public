@@ -30,18 +30,16 @@ variable "event_bridge_rule_name" {
 
 variable "event_pattern" {
   type        = string
-  description = "EventBridge rule pattern to match ECS task state change events (JSON string)"
-  default     = jsonencode({
-    source        = ["aws.ecs"]
-    detail-type   = ["ECS Task State Change"]
-    detail = {
-      lastStatus    = ["STOPPED"]
-      stoppedReason = [
-        { prefix = "OutOfMemoryError" },
-        { prefix = "OutOfMemory" }
-      ]
+  description = "EventBridge rule pattern to match ECS task state change events (JSON string). See AWS docs for event structure: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_task_events.html"
+  default     = <<-EOT
+    {
+      "source": ["aws.ecs"],
+      "detail-type": ["ECS Task State Change"],
+      "detail": {
+        "lastStatus": ["STOPPED"]
+      }
     }
-  })
+  EOT
 }
 
 variable "invocation_rate_per_second" {

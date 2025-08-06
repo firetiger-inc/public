@@ -1,6 +1,6 @@
 # ECS Events Integration - Terraform Example
 
-This example demonstrates how to deploy the Firetiger ECS Events integration using the GitHub-hosted Terraform module.
+This example demonstrates how to deploy the Firetiger ECS Events integration using the GitHub-hosted Terraform module to capture ECS task state change events.
 
 ## Quick Start
 
@@ -15,13 +15,13 @@ This example demonstrates how to deploy the Firetiger ECS Events integration usi
 ## Configuration
 
 The example is pre-configured to capture:
-- STOPPED tasks in the `firetiger-for-firetiger` cluster
+- All STOPPED tasks in the `firetiger-for-firetiger` cluster
 - 20 events per second rate limit
 - Dead letter queue with 1-day retention
 
 ## Event Pattern
 
-The current configuration captures all STOPPED tasks:
+The current configuration captures all STOPPED tasks. For complete event structure reference, see the [AWS ECS Task Events documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_task_events.html).
 
 ```json
 {

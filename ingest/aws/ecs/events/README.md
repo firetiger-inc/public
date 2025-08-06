@@ -1,6 +1,6 @@
 # ECS Events Integration
 
-Capture AWS ECS task state change events (particularly OOM events) and send them to Firetiger using EventBridge API Destinations.
+Capture AWS ECS task state change events and send them to Firetiger using EventBridge API Destinations.
 
 ## Overview
 
@@ -58,13 +58,27 @@ aws cloudformation create-stack \
 
 - `firetiger_username` / `FiretigerUsername` - Basic auth username
 - `firetiger_password` / `FiretigerPassword` - Basic auth password
-- `event_pattern` / `EventPattern` - EventBridge rule pattern (default: OOM events)
+- `event_pattern` / `EventPattern` - EventBridge rule pattern (default: STOPPED tasks)
 - `invocation_rate_per_second` / `InvocationRatePerSecond` - Rate limit (default: 1)
 - `enable_dead_letter_queue` / `EnableDeadLetterQueue` - Enable DLQ (default: true)
 
 ## Event Patterns
 
-### Default (OOM Events Only)
+For complete event structure reference, see the [AWS ECS Task Events documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs_task_events.html).
+
+### Default (STOPPED Tasks)
+
+```json
+{
+  "source": ["aws.ecs"],
+  "detail-type": ["ECS Task State Change"],
+  "detail": {
+    "lastStatus": ["STOPPED"]
+  }
+}
+```
+
+### OOM Events Only
 
 ```json
 {
@@ -80,15 +94,12 @@ aws cloudformation create-stack \
 }
 ```
 
-### All Task Failures
+### All Task State Changes
 
 ```json
 {
   "source": ["aws.ecs"],
-  "detail-type": ["ECS Task State Change"],
-  "detail": {
-    "lastStatus": ["STOPPED"]
-  }
+  "detail-type": ["ECS Task State Change"]
 }
 ```
 

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Firetiger EventBridge ECS Integration - Capture ECS OutOfMemory events as logs using EventBridge API Destinations"
+Description: "Firetiger EventBridge ECS Integration - Capture ECS task state change events using EventBridge API Destinations"
 
 # ==============================================================================
 # Template Parameters
@@ -34,11 +34,7 @@ Parameters:
         "source": ["aws.ecs"],
         "detail-type": ["ECS Task State Change"],
         "detail": {
-          "lastStatus": ["STOPPED"],
-          "stoppedReason": [
-            {"prefix": "OutOfMemoryError"},
-            {"prefix": "OutOfMemory"}
-          ]
+          "lastStatus": ["STOPPED"]
         }
       }
 
@@ -98,15 +94,13 @@ Resources:
           Value: CloudFormation
         - Key: Project
           Value: Firetiger
-        - Key: Purpose
-          Value: EventBridge-ECS-OOM-Events
 
   # EventBridge Connection for authentication to Firetiger endpoint
   FiretigerConnection:
     Type: AWS::Events::Connection
     Properties:
       Name: !Sub "${AWS::StackName}-firetiger-connection"
-      Description: "Connection to Firetiger ingest server for ECS OOM events"
+      Description: "Connection to Firetiger ingest server for ECS events"
       AuthorizationType: !If [HasBasicAuth, "BASIC", "API_KEY"]
       AuthParameters: !If
         - HasBasicAuth
@@ -122,7 +116,7 @@ Resources:
     Type: AWS::Events::ApiDestination
     Properties:
       Name: !Sub "${AWS::StackName}-firetiger-destination"
-      Description: "Firetiger ingest server endpoint for ECS OOM events"
+      Description: "Firetiger ingest server endpoint for ECS events"
       ConnectionArn: !GetAtt FiretigerConnection.Arn
       HttpMethod: "POST"
       InvocationEndpoint: !Sub "${FiretigerEndpoint}/aws/eventbridge/ecs-task-state-change"
@@ -252,7 +246,7 @@ Outputs:
   MonitoringDashboardUrl:
     Description: "CloudWatch dashboard URL to monitor EventBridge rule metrics"
     Value: !Sub |
-      https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${AWS::StackName}-ECS-OOM-Events
+      https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${AWS::StackName}-ECS-Events
 
   SetupCompleteMessage:
     Description: "Setup completion message with next steps"
