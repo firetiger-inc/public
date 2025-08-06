@@ -1,0 +1,18 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform/
+.terraform.lock.hcl
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
