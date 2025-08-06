@@ -37,11 +37,12 @@ resource "aws_iam_role" "lambda_execution_role" {
     ]
   })
 
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  ]
-
   tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_execution_role_basic" {
+  role       = aws_iam_role.lambda_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 # ==============================================================================
@@ -108,7 +109,7 @@ resource "aws_lambda_permission" "cloudwatch_logs_lambda_permission" {
   statement_id  = "AllowExecutionFromCloudWatchLogs"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.cloudwatch_logs_ingester.function_name
-  principal     = "logs.${data.aws_region.current.name}.amazonaws.com"
+  principal     = "logs.amazonaws.com"
   source_account = data.aws_caller_identity.current.account_id
 }
 
@@ -132,30 +133,33 @@ resource "aws_iam_role" "subscription_filter_manager_role" {
     ]
   })
 
-  managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  ]
-
-  inline_policy {
-    name = "CloudWatchLogsAccess"
-    policy = jsonencode({
-      Version = "2012-10-17"
-      Statement = [
-        {
-          Effect = "Allow"
-          Action = [
-            "logs:DescribeLogGroups",
-            "logs:PutSubscriptionFilter",
-            "logs:DeleteSubscriptionFilter",
-            "logs:DescribeSubscriptionFilters"
-          ]
-          Resource = "*"
-        }
-      ]
-    })
-  }
-
   tags = local.tags
+}
+
+resource "aws_iam_role_policy" "subscription_filter_manager_cloudwatch_logs" {
+  name = "CloudWatchLogsAccess"
+  role = aws_iam_role.subscription_filter_manager_role.id
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups",
+          "logs:PutSubscriptionFilter",
+          "logs:DeleteSubscriptionFilter",
+          "logs:DescribeSubscriptionFilters"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "subscription_filter_manager_role_basic" {
+  role       = aws_iam_role.subscription_filter_manager_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
 # ==============================================================================

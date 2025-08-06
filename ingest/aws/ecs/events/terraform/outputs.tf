@@ -35,7 +35,7 @@ output "dead_letter_queue_arn" {
 
 output "monitoring_dashboard_url" {
   description = "CloudWatch dashboard URL to monitor EventBridge rule metrics"
-  value       = "https://${data.aws_region.current.name}.console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.name}#dashboards:name=${var.name_prefix}-ECS-OOM-Events"
+  value       = "https://${data.aws_region.current.id}.console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.id}#dashboards:name=${var.name_prefix}-ECS-OOM-Events"
 }
 
 output "setup_complete_message" {
@@ -55,8 +55,8 @@ output "setup_complete_message" {
     4. Adjust rate limits if needed based on your ECS task volume
     5. Modify the EventPattern parameter to capture different task state changes as needed
 
-    🔗 EventBridge Rules Console: https://${data.aws_region.current.name}.console.aws.amazon.com/events/home?region=${data.aws_region.current.name}#/rules
-    📊 CloudWatch Logs: https://${data.aws_region.current.name}.console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.name}#logsV2:log-groups/log-group/$252Faws$252Fevents$252Frule$252F${var.event_bridge_rule_name}
+    🔗 EventBridge Rules Console: https://${data.aws_region.current.id}.console.aws.amazon.com/events/home?region=${data.aws_region.current.id}#/rules
+    📊 CloudWatch Logs: https://${data.aws_region.current.id}.console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.id}#logsV2:log-groups/log-group/$252Faws$252Fevents$252Frule$252F${var.event_bridge_rule_name}
 
     For troubleshooting, see the deployment README.md file.
   EOT

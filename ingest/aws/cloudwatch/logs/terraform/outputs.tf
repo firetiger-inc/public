@@ -36,6 +36,6 @@ output "setup_complete_message" {
     2. Monitor Lambda function logs in CloudWatch: ${aws_cloudwatch_log_group.lambda_log_group.name}
     3. Adjust log group patterns if needed and update the stack
 
-    🔗 Lambda Function Console: https://${data.aws_region.current.name}.console.aws.amazon.com/lambda/home?region=${data.aws_region.current.name}#/functions/${aws_lambda_function.cloudwatch_logs_ingester.function_name}
+    🔗 Lambda Function Console: https://${data.aws_region.current.id}.console.aws.amazon.com/lambda/home?region=${data.aws_region.current.id}#/functions/${aws_lambda_function.cloudwatch_logs_ingester.function_name}
   EOT
 }
