@@ -3,9 +3,9 @@
 # ==============================================================================
 
 locals {
-  has_basic_auth = var.firetiger_username != "" && var.firetiger_password != ""
+  has_basic_auth           = var.firetiger_username != "" && var.firetiger_password != ""
   create_dead_letter_queue = var.enable_dead_letter_queue
-  
+
   tags = {
     ManagedBy = "Terraform"
     Project   = "Firetiger"
@@ -21,7 +21,7 @@ data "aws_region" "current" {}
 
 resource "aws_sqs_queue" "event_dead_letter_queue" {
   count = local.create_dead_letter_queue ? 1 : 0
-  
+
   name                       = "${var.name_prefix}-eventbridge-ecs-dlq"
   message_retention_seconds  = var.dead_letter_queue_retention_seconds
   visibility_timeout_seconds = 60
@@ -108,7 +108,7 @@ resource "aws_iam_role_policy" "eventbridge_api_destination_policy" {
         ]
         Resource = aws_cloudwatch_event_api_destination.firetiger_api_destination.arn
       }
-    ], local.create_dead_letter_queue ? [
+      ], local.create_dead_letter_queue ? [
       {
         Effect = "Allow"
         Action = [
@@ -152,15 +152,4 @@ resource "aws_cloudwatch_event_target" "firetiger_api_destination_target" {
       arn = aws_sqs_queue.event_dead_letter_queue[0].arn
     }
   }
-}
-
-# ==============================================================================
-# CloudWatch Log Group for monitoring EventBridge rule metrics
-# ==============================================================================
-
-resource "aws_cloudwatch_log_group" "eventbridge_log_group" {
-  name              = "/aws/events/rule/${var.name_prefix}-${var.event_bridge_rule_name}"
-  retention_in_days = 7
-
-  tags = local.tags
 }
