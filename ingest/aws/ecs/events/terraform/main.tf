@@ -159,7 +159,7 @@ resource "aws_cloudwatch_event_target" "firetiger_api_destination_target" {
 # ==============================================================================
 
 resource "aws_cloudwatch_log_group" "eventbridge_log_group" {
-  name              = "/aws/events/rule/${var.event_bridge_rule_name}"
+  name              = "/aws/events/rule/${var.name_prefix}-${var.event_bridge_rule_name}"
   retention_in_days = 7
 
   tags = local.tags
