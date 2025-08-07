@@ -22,7 +22,7 @@ data "aws_region" "current" {}
 resource "aws_sqs_queue" "event_dead_letter_queue" {
   count = local.create_dead_letter_queue ? 1 : 0
 
-  name                       = "${var.name_prefix}-eventbridge-ecs-dlq"
+  name                       = "${var.name_prefix}-ecs-task-state-dlq"
   message_retention_seconds  = var.dead_letter_queue_retention_seconds
   visibility_timeout_seconds = 60
 
@@ -34,7 +34,7 @@ resource "aws_sqs_queue" "event_dead_letter_queue" {
 # ==============================================================================
 
 resource "aws_cloudwatch_event_connection" "firetiger_connection" {
-  name        = "${var.name_prefix}-firetiger-connection"
+  name        = "${var.name_prefix}-ecs-task-state-conn"
   description = "Connection to Firetiger ingest server for ECS events"
 
   authorization_type = local.has_basic_auth ? "BASIC" : "API_KEY"
@@ -63,7 +63,7 @@ resource "aws_cloudwatch_event_connection" "firetiger_connection" {
 # ==============================================================================
 
 resource "aws_cloudwatch_event_api_destination" "firetiger_api_destination" {
-  name                             = "${var.name_prefix}-firetiger-destination"
+  name                             = "${var.name_prefix}-ecs-task-state-dest"
   description                      = "Firetiger ingest server endpoint for ECS events"
   invocation_endpoint              = "${var.firetiger_endpoint}/aws/eventbridge/ecs-task-state-change"
   http_method                      = "POST"
@@ -76,7 +76,7 @@ resource "aws_cloudwatch_event_api_destination" "firetiger_api_destination" {
 # ==============================================================================
 
 resource "aws_iam_role" "eventbridge_role" {
-  name = "${var.name_prefix}-eventbridge-role"
+  name = "${var.name_prefix}-ecs-task-state-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -95,7 +95,7 @@ resource "aws_iam_role" "eventbridge_role" {
 }
 
 resource "aws_iam_role_policy" "eventbridge_api_destination_policy" {
-  name = "EventBridgeApiDestinationPolicy"
+  name = "${var.name_prefix}-ecs-task-state-policy"
   role = aws_iam_role.eventbridge_role.id
 
   policy = jsonencode({
@@ -125,7 +125,7 @@ resource "aws_iam_role_policy" "eventbridge_api_destination_policy" {
 # ==============================================================================
 
 resource "aws_cloudwatch_event_rule" "ecs_task_state_change_rule" {
-  name           = var.event_bridge_rule_name
+  name           = "${var.name_prefix}-${var.event_bridge_rule_name}"
   description    = "Capture ECS task state change events and send to Firetiger"
   event_bus_name = var.event_bridge_bus
   state          = "ENABLED"

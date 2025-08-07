@@ -24,8 +24,8 @@ variable "firetiger_password" {
 
 variable "event_bridge_rule_name" {
   type        = string
-  description = "Name for the EventBridge rule"
-  default     = "firetiger-ecs-task-state-change"
+  description = "Name for the EventBridge rule (will be prefixed with name_prefix)"
+  default     = "ecs-task-state"
 }
 
 variable "event_pattern" {
