@@ -76,7 +76,7 @@ resource "aws_lambda_function" "cloudwatch_logs_ingester" {
   memory_size   = var.lambda_memory_size_mb
   architectures = ["x86_64"]
 
-  s3_bucket        = data.aws_s3_bucket.lambda_code_bucket.name
+  s3_bucket        = data.aws_s3_bucket.lambda_code_bucket.bucket
   s3_key           = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
   source_code_hash = data.aws_s3_object.lambda_code.etag
 
