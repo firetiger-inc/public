@@ -7,6 +7,9 @@ locals {
 
   lambda_function_name = "${var.name_prefix}-cloudwatch-logs-ingester"
 
+  # Construct bucket name based on current provider region
+  s3_bucket = "firetiger-public-${data.aws_region.current.id}"
+
   tags = {
     ManagedBy = "Terraform"
     Project   = "Firetiger"
@@ -15,6 +18,11 @@ locals {
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
+
+# Validate that the S3 bucket exists for this region
+data "aws_s3_bucket" "lambda_code_bucket" {
+  bucket = local.s3_bucket
+}
 
 # ==============================================================================
 # IAM Role for Lambda Execution
@@ -68,7 +76,7 @@ resource "aws_lambda_function" "cloudwatch_logs_ingester" {
   memory_size   = var.lambda_memory_size_mb
   architectures = ["x86_64"]
 
-  s3_bucket        = "firetiger-public"
+  s3_bucket        = data.aws_s3_bucket.lambda_code_bucket
   s3_key           = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
   source_code_hash = data.aws_s3_object.lambda_code.etag
 
@@ -96,7 +104,7 @@ resource "aws_lambda_function" "cloudwatch_logs_ingester" {
 
 # Reference Lambda deployment package from S3
 data "aws_s3_object" "lambda_code" {
-  bucket = "firetiger-public"
+  bucket = local.s3_bucket
   key    = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
 }
 
