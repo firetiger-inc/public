@@ -10,7 +10,7 @@ output "event_bridge_rule_arn" {
 
 output "api_destination_endpoint" {
   description = "Firetiger API destination endpoint"
-  value       = "${var.firetiger_endpoint}/aws/eventbridge/ecs-task-state-change"
+  value       = "${var.firetiger_endpoint}/aws/events"
 }
 
 output "api_destination_arn" {
@@ -44,7 +44,7 @@ output "setup_complete_message" {
     🎉 Firetiger EventBridge ECS Integration deployed successfully!
 
     EventBridge Rule: ${aws_cloudwatch_event_rule.ecs_task_state_change_rule.name}
-    API Destination: ${var.firetiger_endpoint}/aws/eventbridge/ecs-task-state-change
+    API Destination: ${var.firetiger_endpoint}/aws/events
     Rate Limit: ${var.invocation_rate_per_second} events/second
     Dead Letter Queue: ${var.enable_dead_letter_queue}
 
