@@ -3,8 +3,7 @@
 # ==============================================================================
 
 locals {
-  has_basic_auth           = var.firetiger_username != "" && var.firetiger_password != ""
-  create_dead_letter_queue = var.enable_dead_letter_queue
+  has_basic_auth = var.firetiger_username != "" && var.firetiger_password != ""
 
   tags = {
     ManagedBy = "Terraform"
@@ -14,20 +13,6 @@ locals {
 
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
-
-# ==============================================================================
-# Dead Letter Queue for failed events (optional)
-# ==============================================================================
-
-resource "aws_sqs_queue" "event_dead_letter_queue" {
-  count = local.create_dead_letter_queue ? 1 : 0
-
-  name                       = "${var.name_prefix}-ecs-task-state-dlq"
-  message_retention_seconds  = var.dead_letter_queue_retention_seconds
-  visibility_timeout_seconds = 60
-
-  tags = local.tags
-}
 
 # ==============================================================================
 # EventBridge Connection for authentication to Firetiger endpoint
@@ -100,7 +85,7 @@ resource "aws_iam_role_policy" "eventbridge_api_destination_policy" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = concat([
+    Statement = [
       {
         Effect = "Allow"
         Action = [
@@ -108,15 +93,7 @@ resource "aws_iam_role_policy" "eventbridge_api_destination_policy" {
         ]
         Resource = aws_cloudwatch_event_api_destination.firetiger_api_destination.arn
       }
-      ], local.create_dead_letter_queue ? [
-      {
-        Effect = "Allow"
-        Action = [
-          "sqs:SendMessage"
-        ]
-        Resource = aws_sqs_queue.event_dead_letter_queue[0].arn
-      }
-    ] : [])
+    ]
   })
 }
 
@@ -144,12 +121,5 @@ resource "aws_cloudwatch_event_target" "firetiger_api_destination_target" {
   retry_policy {
     maximum_retry_attempts       = 0
     maximum_event_age_in_seconds = 3600
-  }
-
-  dynamic "dead_letter_config" {
-    for_each = local.create_dead_letter_queue ? [1] : []
-    content {
-      arn = aws_sqs_queue.event_dead_letter_queue[0].arn
-    }
   }
 }
