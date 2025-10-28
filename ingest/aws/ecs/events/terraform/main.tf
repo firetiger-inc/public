@@ -50,7 +50,7 @@ resource "aws_cloudwatch_event_connection" "firetiger_connection" {
 resource "aws_cloudwatch_event_api_destination" "firetiger_api_destination" {
   name                             = "${var.name_prefix}-ecs-task-state-dest"
   description                      = "Firetiger ingest server endpoint for ECS events"
-  invocation_endpoint              = "${var.firetiger_endpoint}/aws/eventbridge/ecs-task-state-change"
+  invocation_endpoint              = "${var.firetiger_endpoint}/aws/events"
   http_method                      = "POST"
   invocation_rate_limit_per_second = var.invocation_rate_per_second
   connection_arn                   = aws_cloudwatch_event_connection.firetiger_connection.arn

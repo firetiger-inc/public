@@ -119,7 +119,7 @@ Resources:
       Description: "Firetiger ingest server endpoint for ECS events"
       ConnectionArn: !GetAtt FiretigerConnection.Arn
       HttpMethod: "POST"
-      InvocationEndpoint: !Sub "${FiretigerEndpoint}/aws/eventbridge/ecs-task-state-change"
+      InvocationEndpoint: !Sub "${FiretigerEndpoint}/aws/events"
       InvocationRateLimitPerSecond: !Ref InvocationRatePerSecond
 
   # IAM Role for EventBridge to invoke the API destination and SQS
@@ -213,7 +213,7 @@ Outputs:
 
   ApiDestinationEndpoint:
     Description: "Firetiger API destination endpoint"
-    Value: !Sub "${FiretigerEndpoint}/aws/eventbridge/ecs-task-state-change"
+    Value: !Sub "${FiretigerEndpoint}/aws/events"
     Export:
       Name: !Sub "${AWS::StackName}-ApiDestinationEndpoint"
 
@@ -254,7 +254,7 @@ Outputs:
       🎉 Firetiger EventBridge ECS Integration deployed successfully!
 
       EventBridge Rule: ${ECSTaskStateChangeRule}
-      API Destination: ${FiretigerEndpoint}/aws/eventbridge/ecs-task-state-change
+      API Destination: ${FiretigerEndpoint}/aws/events
       Rate Limit: ${InvocationRatePerSecond} events/second
       Dead Letter Queue: ${EnableDeadLetterQueue}
 
