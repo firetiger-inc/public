@@ -61,7 +61,8 @@ resource "aws_cloudwatch_event_api_destination" "firetiger_api_destination" {
 # ==============================================================================
 
 resource "aws_iam_role" "eventbridge_role" {
-  name = "${var.name_prefix}-ecs-task-state-role"
+  name                 = "${var.name_prefix}-ecs-task-state-role"
+  permissions_boundary = var.iam_permissions_boundary_arn
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

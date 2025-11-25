@@ -58,3 +58,10 @@ variable "event_bridge_bus" {
   description = "EventBridge bus to use (default or custom bus name)"
   default     = "default"
 }
+
+variable "iam_permissions_boundary_arn" {
+  type        = string
+  default     = null
+  nullable    = true
+  description = "Optional ARN of an IAM permissions boundary policy to attach to IAM roles."
+}
