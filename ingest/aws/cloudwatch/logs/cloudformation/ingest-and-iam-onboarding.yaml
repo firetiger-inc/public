@@ -1,0 +1,308 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Firetiger CloudWatch Logs Integration with IAM Role - Turnkey ingestion of CloudWatch logs via subscription filters and Lambda, plus cross-account IAM role for Firetiger access"
+
+# ==============================================================================
+# Template Parameters
+# ==============================================================================
+
+Parameters:
+  FiretigerEndpoint:
+    Type: String
+    Description: "Firetiger OpenTelemetry logs endpoint (e.g., https://ingest.my-deployment.firetigerapi.com)"
+
+  FiretigerUsername:
+    Type: String
+    Description: "Username for basic authentication to Firetiger exporter"
+    Default: ""
+
+  FiretigerPassword:
+    Type: String
+    Description: "Password for basic authentication to Firetiger exporter"
+    Default: ""
+    NoEcho: true
+
+  FiretigerAWSAccountId:
+    Type: String
+    Description: "Firetiger's AWS account ID for cross-account access"
+    Default: "767397957700"
+
+  LogGroupPatterns:
+    Type: CommaDelimitedList
+    Description: "Comma-separated list of log group name patterns to monitor (use * for all)"
+    Default: "*"
+
+  SubscriptionFilterPattern:
+    Type: String
+    Description: "CloudWatch Logs filter pattern (empty for all logs)"
+    Default: ""
+
+  LambdaTimeoutSeconds:
+    Type: Number
+    Description: "Lambda function timeout in seconds"
+    Default: 300
+    MinValue: 60
+    MaxValue: 900
+
+  LambdaMemorySizeMb:
+    Type: Number
+    Description: "Lambda function memory size in MB"
+    Default: 256
+    MinValue: 128
+    MaxValue: 10240
+
+  LogRetentionDays:
+    Type: Number
+    Description: "CloudWatch Logs retention period for Lambda function logs"
+    Default: 7
+    AllowedValues:
+      [
+        1,
+        3,
+        5,
+        7,
+        14,
+        30,
+        60,
+        90,
+        120,
+        150,
+        180,
+        365,
+        400,
+        545,
+        731,
+        1827,
+        3653,
+      ]
+
+# ==============================================================================
+# Conditions
+# ==============================================================================
+
+Conditions:
+  HasBasicAuth: !And
+    - !Not [!Equals [!Ref FiretigerUsername, ""]]
+    - !Not [!Equals [!Ref FiretigerPassword, ""]]
+
+# ==============================================================================
+# Resources
+# ==============================================================================
+
+Resources:
+  # IAM Role for Lambda Execution
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-lambda-execution-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+
+  # CloudWatch Log Group for Lambda Function
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-cloudwatch-logs-ingester"
+      RetentionInDays: !Ref LogRetentionDays
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+
+  # Lambda Function for CloudWatch Logs Processing
+  CloudWatchLogsIngesterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-cloudwatch-logs-ingester"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.13
+      Handler: index.lambda_handler
+      Code:
+        S3Bucket: firetiger-public
+        S3Key: ingest/aws/cloudwatch/logs/lambda/ingester.zip
+      Environment:
+        Variables:
+          FT_EXPORTER_ENDPOINT: !Ref FiretigerEndpoint
+          FT_EXPORTER_BASIC_AUTH_USERNAME:
+            !If [HasBasicAuth, !Ref FiretigerUsername, !Ref "AWS::NoValue"]
+          FT_EXPORTER_BASIC_AUTH_PASSWORD:
+            !If [HasBasicAuth, !Ref FiretigerPassword, !Ref "AWS::NoValue"]
+      Timeout: !Ref LambdaTimeoutSeconds
+      MemorySize: !Ref LambdaMemorySizeMb
+      Architectures:
+        - x86_64
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: !Ref LambdaLogGroup
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+
+  # Permission for CloudWatch Logs to invoke Lambda
+  CloudWatchLogsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref CloudWatchLogsIngesterFunction
+      Action: lambda:InvokeFunction
+      Principal: !Sub "logs.${AWS::Region}.amazonaws.com"
+      SourceAccount: !Ref AWS::AccountId
+
+  # Custom Resource to create subscription filters for matching log groups
+  SubscriptionFilterManager:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt SubscriptionFilterManagerFunction.Arn
+      LambdaArn: !GetAtt CloudWatchLogsIngesterFunction.Arn
+      FilterPattern: !Ref SubscriptionFilterPattern
+      LogGroupPatterns: !Ref LogGroupPatterns
+      StackName: !Ref AWS::StackName
+
+  # Lambda function to manage subscription filters
+  SubscriptionFilterManagerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-subscription-filter-manager"
+      Runtime: python3.13
+      Handler: index.lambda_handler
+      Role: !GetAtt SubscriptionFilterManagerRole.Arn
+      Timeout: 300
+      Code:
+        S3Bucket: firetiger-public
+        S3Key: ingest/aws/cloudwatch/logs/lambda/filter_manager.zip
+
+  # IAM Role for Subscription Filter Manager
+  SubscriptionFilterManagerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CloudWatchLogsAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:DescribeLogGroups
+                  - logs:PutSubscriptionFilter
+                  - logs:DeleteSubscriptionFilter
+                  - logs:DescribeSubscriptionFilters
+                Resource: "*"
+
+  # ==============================================================================
+  # Cross-Account IAM Role for Firetiger
+  # ==============================================================================
+
+  # IAM Role that Firetiger can assume for read-only access to AWS resources.
+  # This enables features like querying CloudWatch Logs directly and accessing
+  # other AWS services for observability insights.
+  FiretigerAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-firetiger-access"
+      Description: "Cross-account role for Firetiger to access AWS resources (read-only)"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${FiretigerAWSAccountId}:root"
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Sub "${AWS::StackName}-${AWS::AccountId}"
+      ManagedPolicyArns:
+        # CloudWatch Logs read-only access for log querying
+        - arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+        - Key: Purpose
+          Value: CrossAccountAccess
+
+# ==============================================================================
+# Outputs
+# ==============================================================================
+
+Outputs:
+  LambdaFunctionName:
+    Description: "Name of the CloudWatch logs ingestion Lambda function"
+    Value: !Ref CloudWatchLogsIngesterFunction
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaFunctionName"
+
+  LambdaFunctionArn:
+    Description: "ARN of the CloudWatch logs ingestion Lambda function"
+    Value: !GetAtt CloudWatchLogsIngesterFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaFunctionArn"
+
+  LambdaLogGroupName:
+    Description: "CloudWatch log group for the Lambda function"
+    Value: !Ref LambdaLogGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaLogGroup"
+
+  MonitoredLogGroups:
+    Description: "Number of CloudWatch log groups being monitored"
+    Value: !GetAtt SubscriptionFilterManager.MonitoredLogGroups
+
+  FilterCount:
+    Description: "Number of subscription filters created"
+    Value: !GetAtt SubscriptionFilterManager.FilterCount
+
+  # Cross-account role outputs for Firetiger connection setup
+  FiretigerRoleArn:
+    Description: "ARN of the IAM role for Firetiger cross-account access (copy this to Firetiger)"
+    Value: !GetAtt FiretigerAccessRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-FiretigerRoleArn"
+
+  FiretigerExternalId:
+    Description: "External ID for Firetiger role assumption (copy this to Firetiger)"
+    Value: !Sub "${AWS::StackName}-${AWS::AccountId}"
+    Export:
+      Name: !Sub "${AWS::StackName}-FiretigerExternalId"
+
+  SetupCompleteMessage:
+    Description: "Setup completion message with next steps"
+    Value: !Sub |
+      🎉 Firetiger CloudWatch Logs integration deployed successfully!
+
+      Lambda Function: ${CloudWatchLogsIngesterFunction}
+      Monitored Log Groups: ${SubscriptionFilterManager.MonitoredLogGroups}
+
+      📋 Copy these values to Firetiger to complete the AWS connection:
+      • Role ARN: ${FiretigerAccessRole.Arn}
+      • External ID: ${AWS::StackName}-${AWS::AccountId}
+
+      Next steps:
+      1. Enter the Role ARN and External ID in the Firetiger UI
+      2. Click "Verify Connection" to test the setup
+      3. Verify logs are appearing in Firetiger at: ${FiretigerEndpoint}
+      4. Monitor Lambda function logs in CloudWatch: ${LambdaLogGroup}
+
+      🔗 Lambda Function Console: https://${AWS::Region}.console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${CloudWatchLogsIngesterFunction}
