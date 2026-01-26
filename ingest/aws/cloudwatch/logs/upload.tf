@@ -141,7 +141,7 @@ output "cloudformation_template_url" {
   value       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template.key}"
 }
 
-output "cloudformation_template_with_iam_url" {
+output "cloudformation_template_onboarding_url" {
   description = "HTTPS URL for CloudFormation template with IAM role"
   value       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_with_iam.key}"
 }
@@ -151,7 +151,7 @@ output "cloudformation_quick_deploy_url" {
   value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template.key}&stackName=firetiger-ingest-cloudwatch-logs"
 }
 
-output "cloudformation_quick_deploy_with_iam_url" {
+output "cloudformation_quick_deploy_onboarding_url" {
   description = "One-click CloudFormation deployment URL with IAM role"
   value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_with_iam.key}&stackName=firetiger-ingest-and-iam-onboarding"
 }
