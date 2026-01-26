@@ -131,28 +131,28 @@ output "lambda_s3_urls" {
 output "lambda_https_urls" {
   description = "HTTPS URLs for Lambda packages"
   value = {
-    ingester       = "https://s3.amazonaws.com/${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.ingester_lambda.key}"
-    filter_manager = "https://s3.amazonaws.com/${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.filter_manager_lambda.key}"
+    ingester       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.ingester_lambda.key}"
+    filter_manager = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.filter_manager_lambda.key}"
   }
 }
 
 output "cloudformation_template_url" {
   description = "HTTPS URL for CloudFormation template"
-  value       = "https://s3.amazonaws.com/${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.cloudformation_template.key}"
+  value       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template.key}"
 }
 
 output "cloudformation_template_with_iam_url" {
   description = "HTTPS URL for CloudFormation template with IAM role"
-  value       = "https://s3.amazonaws.com/${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.cloudformation_template_with_iam.key}"
+  value       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_with_iam.key}"
 }
 
 output "cloudformation_quick_deploy_url" {
   description = "One-click CloudFormation deployment URL"
-  value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.cloudformation_template.key}&stackName=firetiger-ingest-cloudwatch-logs"
+  value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template.key}&stackName=firetiger-ingest-cloudwatch-logs"
 }
 
 output "cloudformation_quick_deploy_with_iam_url" {
   description = "One-click CloudFormation deployment URL with IAM role"
-  value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://s3.amazonaws.com/${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.cloudformation_template_with_iam.key}&stackName=firetiger-ingest-and-iam-onboarding"
+  value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_with_iam.key}&stackName=firetiger-ingest-and-iam-onboarding"
 }
 
