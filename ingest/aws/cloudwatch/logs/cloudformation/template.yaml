@@ -23,12 +23,32 @@ Parameters:
 
   LogGroupPatterns:
     Type: CommaDelimitedList
-    Description: "Comma-separated list of log group name patterns to monitor (use * for all)"
+    Description: >-
+      Comma-separated list of log group name patterns to subscribe to.
+      Supports glob-style wildcards: * matches any sequence of characters.
+      Works with any CloudWatch log group including Lambda, ECS, EKS, RDS,
+      API Gateway, VPC Flow Logs, CloudTrail, and custom application logs.
+      Examples:
+      '*' (all log groups),
+      '/aws/lambda/*,/aws/ecs/*' (Lambda and ECS logs),
+      '/aws/rds/*,/aws/apigateway/*' (RDS and API Gateway logs),
+      'vpc-flow-logs-*,/aws/cloudtrail/*' (VPC and CloudTrail logs),
+      '/myapp/prod-*,/myapp/staging-*' (custom application logs).
+      Log groups matching any pattern will have subscription filters created.
     Default: "*"
 
   SubscriptionFilterPattern:
     Type: String
-    Description: "CloudWatch Logs filter pattern (empty for all logs)"
+    Description: >-
+      CloudWatch Logs filter pattern to select which log events are forwarded.
+      Leave empty to forward all logs. Uses CloudWatch filter pattern syntax.
+      Examples:
+      '' (empty - all logs),
+      'ERROR' (lines containing ERROR),
+      '?ERROR ?WARN' (lines containing ERROR or WARN),
+      '{ $.level = "error" }' (JSON logs where level field equals error),
+      '{ $.statusCode >= 400 }' (JSON logs with statusCode 400+).
+      See: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/FilterAndPatternSyntax.html
     Default: ""
 
   LambdaTimeoutSeconds:
@@ -47,7 +67,14 @@ Parameters:
 
   LogRetentionDays:
     Type: Number
-    Description: "CloudWatch Logs retention period for Lambda function logs"
+    Description: >-
+      Retention period (in days) for the Firetiger ingestion stack's CloudWatch logs.
+      This controls how long logs from the Lambda functions deployed by this template
+      are retained, NOT your application logs being forwarded to Firetiger.
+      Useful for debugging ingestion issues. Common values:
+      7 (one week, good for development),
+      30 (one month, recommended for production),
+      90 (three months, for compliance requirements).
     Default: 7
     AllowedValues:
       [
