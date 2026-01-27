@@ -259,7 +259,8 @@ Resources:
             Action: sts:AssumeRole
             Condition:
               StringEquals:
-                sts:ExternalId: !Sub "${AWS::StackName}-${AWS::AccountId}"
+                # Use StackId which contains a unique UUID generated at stack creation
+                sts:ExternalId: !Select [2, !Split ["/", !Ref "AWS::StackId"]]
       ManagedPolicyArns:
         # CloudWatch Logs read-only access for log querying
         - arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess
@@ -311,7 +312,7 @@ Outputs:
 
   FiretigerExternalId:
     Description: "External ID for Firetiger role assumption (copy this to Firetiger)"
-    Value: !Sub "${AWS::StackName}-${AWS::AccountId}"
+    Value: !Select [2, !Split ["/", !Ref "AWS::StackId"]]
     Export:
       Name: !Sub "${AWS::StackName}-FiretigerExternalId"
 
@@ -323,9 +324,9 @@ Outputs:
       Lambda Function: ${CloudWatchLogsIngesterFunction}
       Monitored Log Groups: ${SubscriptionFilterManager.MonitoredLogGroups}
 
-      📋 Copy these values to Firetiger to complete the AWS connection:
-      • Role ARN: ${FiretigerAccessRole.Arn}
-      • External ID: ${AWS::StackName}-${AWS::AccountId}
+      📋 Copy these values from the Outputs tab to Firetiger:
+      • Role ARN: See FiretigerRoleArn output
+      • External ID: See FiretigerExternalId output (unique per stack)
 
       Next steps:
       1. Enter the Role ARN and External ID in the Firetiger UI
