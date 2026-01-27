@@ -191,6 +191,7 @@ Resources:
   # Custom Resource to create subscription filters for matching log groups
   SubscriptionFilterManager:
     Type: AWS::CloudFormation::CustomResource
+    DependsOn: CloudWatchLogsLambdaPermission
     Properties:
       ServiceToken: !GetAtt SubscriptionFilterManagerFunction.Arn
       LambdaArn: !GetAtt CloudWatchLogsIngesterFunction.Arn
