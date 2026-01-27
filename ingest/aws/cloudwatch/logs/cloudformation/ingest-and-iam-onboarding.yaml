@@ -26,6 +26,12 @@ Parameters:
     Description: "Firetiger's AWS account ID for cross-account access"
     Default: "975050257559"
 
+  FiretigerExternalId:
+    Type: String
+    Description: "External ID for secure cross-account role assumption (provided by Firetiger)"
+    AllowedPattern: "^[a-f0-9-]{36}$"
+    ConstraintDescription: "Must be a valid UUID (e.g., 550e8400-e29b-41d4-a716-446655440000)"
+
   LogGroupPatterns:
     Type: CommaDelimitedList
     Description: >-
@@ -259,8 +265,7 @@ Resources:
             Action: sts:AssumeRole
             Condition:
               StringEquals:
-                # Use StackId which contains a unique UUID generated at stack creation
-                sts:ExternalId: !Select [2, !Split ["/", !Ref "AWS::StackId"]]
+                sts:ExternalId: !Ref FiretigerExternalId
       ManagedPolicyArns:
         # CloudWatch Logs read-only access for log querying
         - arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess
@@ -311,8 +316,8 @@ Outputs:
       Name: !Sub "${AWS::StackName}-FiretigerRoleArn"
 
   FiretigerExternalId:
-    Description: "External ID for Firetiger role assumption (copy this to Firetiger)"
-    Value: !Select [2, !Split ["/", !Ref "AWS::StackId"]]
+    Description: "External ID for Firetiger role assumption (provided by Firetiger, no need to copy)"
+    Value: !Ref FiretigerExternalId
     Export:
       Name: !Sub "${AWS::StackName}-FiretigerExternalId"
 
@@ -324,12 +329,11 @@ Outputs:
       Lambda Function: ${CloudWatchLogsIngesterFunction}
       Monitored Log Groups: ${SubscriptionFilterManager.MonitoredLogGroups}
 
-      📋 Copy these values from the Outputs tab to Firetiger:
+      📋 Copy this value from the Outputs tab to Firetiger:
       • Role ARN: See FiretigerRoleArn output
-      • External ID: See FiretigerExternalId output (unique per stack)
 
       Next steps:
-      1. Enter the Role ARN and External ID in the Firetiger UI
+      1. Enter the Role ARN in the Firetiger UI (External ID is already configured)
       2. Click "Verify Connection" to test the setup
       3. Verify logs are appearing in Firetiger at: ${FiretigerEndpoint}
       4. Monitor Lambda function logs in CloudWatch: ${LambdaLogGroup}
