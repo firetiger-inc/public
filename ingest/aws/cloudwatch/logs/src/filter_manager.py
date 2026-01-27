@@ -38,14 +38,20 @@ def send_cfn_response(event, context, response_status, response_data, reason=Non
     )
 
     try:
-        with urllib.request.urlopen(req) as response:
-            print(f"Status code: {response.status}")
+        # Use a 30 second timeout to avoid hanging
+        with urllib.request.urlopen(req, timeout=30) as response:
+            print(f"CFN response sent successfully, status code: {response.status}")
     except Exception as e:
         print(f"send_cfn_response failed: {e}")
 
 
-def cleanup_subscription_filters(stack_name):
-    """Delete all subscription filters created by this stack."""
+def cleanup_subscription_filters(stack_name, context=None):
+    """Delete all subscription filters created by this stack.
+
+    Args:
+        stack_name: The CloudFormation stack name used as filter prefix
+        context: Lambda context for checking remaining time (optional)
+    """
     if not stack_name:
         print("No stack name provided, skipping cleanup")
         return 0
@@ -54,11 +60,19 @@ def cleanup_subscription_filters(stack_name):
     deleted_count = 0
     filter_prefix = f"firetiger-{stack_name}-"
 
+    # Reserve 10 seconds for final logging
+    min_remaining_time_ms = 10000
+
     try:
         # Iterate through all log groups and delete our filters
         paginator = logs_client.get_paginator("describe_log_groups")
         for page in paginator.paginate():
             for log_group in page["logGroups"]:
+                # Check if we're running out of time
+                if context and context.get_remaining_time_in_millis() < min_remaining_time_ms:
+                    print(f"Running low on time, stopping cleanup. Deleted {deleted_count} filters so far.")
+                    return deleted_count
+
                 log_group_name = log_group["logGroupName"]
                 try:
                     # Get subscription filters for this log group
@@ -85,23 +99,28 @@ def cleanup_subscription_filters(stack_name):
 def lambda_handler(event, context):
     print(f"Received event: {json.dumps(event)}")
 
-    # Handle Delete first with its own try/catch - MUST always send response
-    if event["RequestType"] == "Delete":
+    # Handle Delete first - send response IMMEDIATELY to avoid timeout issues
+    # CloudFormation just needs to know we acknowledged the delete request
+    # The cleanup can happen after the response is sent
+    if event.get("RequestType") == "Delete":
+        # Send SUCCESS response FIRST to prevent CloudFormation timeout
+        # This ensures the stack deletion proceeds even if cleanup takes a long time
+        print("Delete request received, sending SUCCESS response immediately")
+        send_cfn_response(event, context, SUCCESS, {
+            "Message": "Delete acknowledged, cleanup in progress"
+        })
+
+        # Now attempt cleanup (best effort - if this fails, filters are orphaned but stack deletion proceeds)
         try:
             stack_name = event.get("ResourceProperties", {}).get("StackName", "")
-            deleted_count = cleanup_subscription_filters(stack_name)
-            send_cfn_response(event, context, SUCCESS, {
-                "Message": "Cleanup completed",
-                "DeletedFilters": deleted_count
-            })
+            if stack_name:
+                deleted_count = cleanup_subscription_filters(stack_name, context)
+                print(f"Cleanup completed: deleted {deleted_count} filters")
+            else:
+                print("No stack name provided, skipping cleanup")
         except Exception as e:
-            print(f"Error during delete (still sending SUCCESS to avoid stuck stack): {e}")
-            # Always send SUCCESS for delete to prevent stuck stacks
-            # The filters will be orphaned but can be manually cleaned up
-            send_cfn_response(event, context, SUCCESS, {
-                "Message": "Cleanup completed with errors",
-                "Error": str(e)
-            })
+            # Log but don't fail - response already sent
+            print(f"Error during cleanup (response already sent): {e}")
         return
 
     try:
