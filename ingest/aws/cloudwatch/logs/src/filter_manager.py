@@ -46,7 +46,6 @@ def lambda_handler(event, context):
             response_data = {
                 'FilterCount': len(created_filters),
                 'MonitoredLogGroups': len(matched_groups),
-                'CreatedFilters': created_filters
             }
             
         elif event['RequestType'] == 'Delete':
