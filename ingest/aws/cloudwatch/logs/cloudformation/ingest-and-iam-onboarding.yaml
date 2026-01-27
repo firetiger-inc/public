@@ -248,7 +248,7 @@ Resources:
   FiretigerAccessRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${AWS::StackName}-firetiger-access"
+      RoleName: !Sub "${AWS::StackName}@FiretigerAccessRole"
       Description: "Cross-account role for Firetiger to access AWS resources (read-only)"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
