@@ -5,6 +5,13 @@ Description: "Firetiger CloudWatch Logs Integration - Turnkey ingestion of Cloud
 # Template Parameters
 # ==============================================================================
 
+Mappings:
+  RegionBucket:
+    us-east-1:
+      Name: firetiger-public-us-east-1
+    us-west-2:
+      Name: firetiger-public-us-west-2
+
 Parameters:
   FiretigerEndpoint:
     Type: String
@@ -152,7 +159,7 @@ Resources:
       Runtime: python3.13
       Handler: index.lambda_handler
       Code:
-        S3Bucket: firetiger-public
+        S3Bucket: !FindInMap [RegionBucket, !Ref "AWS::Region", Name]
         S3Key: ingest/aws/cloudwatch/logs/lambda/ingester.zip
       Environment:
         Variables:
@@ -204,7 +211,7 @@ Resources:
       Role: !GetAtt SubscriptionFilterManagerRole.Arn
       Timeout: 300
       Code:
-        S3Bucket: firetiger-public
+        S3Bucket: !FindInMap [RegionBucket, !Ref "AWS::Region", Name]
         S3Key: ingest/aws/cloudwatch/logs/lambda/filter_manager.zip
 
   # IAM Role for Subscription Filter Manager
