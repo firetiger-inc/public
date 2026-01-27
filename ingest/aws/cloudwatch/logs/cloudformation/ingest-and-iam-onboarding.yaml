@@ -24,7 +24,7 @@ Parameters:
   FiretigerAWSAccountId:
     Type: String
     Description: "Firetiger's AWS account ID for cross-account access"
-    Default: "767397957700"
+    Default: "975050257559"
 
   LogGroupPatterns:
     Type: CommaDelimitedList
