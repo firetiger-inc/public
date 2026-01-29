@@ -9,9 +9,10 @@
 terraform {
   required_version = ">= 1.0"
 
-  backend "gcs" {
+  backend "s3" {
     bucket = "firetiger-terraform"
-    prefix = "public/ingest/gcp/cloud-logging"
+    key    = "public/ingest/gcp/cloud-logging/terraform.tfstate"
+    region = "us-west-2"
   }
 
   required_providers {
@@ -27,7 +28,7 @@ terraform {
 }
 
 data "google_storage_bucket" "firetiger_public" {
-  name = "firetiger-public-gcp"
+  name = "firetiger-public"
 }
 
 # Package Cloud Function source code
