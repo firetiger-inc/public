@@ -9,11 +9,14 @@ Uses Python standard library for HTTP to minimize cold start time.
 
 import json
 import os
+import urllib.parse
 import urllib.request
 import urllib.error
 from base64 import b64encode
 import logging
 import time
+
+import functions_framework
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -171,8 +174,152 @@ def log_entry_to_otlp(log_entry):
             "value": {"stringValue": span_id},
         })
 
+    trace_sampled = log_entry.get("traceSampled")
+    if trace_sampled is not None:
+        attributes.append({
+            "key": "gcp.trace_sampled",
+            "value": {"boolValue": trace_sampled},
+        })
+
+    receive_timestamp = log_entry.get("receiveTimestamp", "")
+    if receive_timestamp:
+        attributes.append({
+            "key": "gcp.receive_timestamp",
+            "value": {"stringValue": receive_timestamp},
+        })
+
+    # Operation metadata (correlates related log entries)
+    operation = log_entry.get("operation")
+    if operation:
+        op_id = operation.get("id", "")
+        if op_id:
+            attributes.append({
+                "key": "gcp.operation.id",
+                "value": {"stringValue": op_id},
+            })
+        op_producer = operation.get("producer", "")
+        if op_producer:
+            attributes.append({
+                "key": "gcp.operation.producer",
+                "value": {"stringValue": op_producer},
+            })
+        if operation.get("first"):
+            attributes.append({
+                "key": "gcp.operation.first",
+                "value": {"boolValue": True},
+            })
+        if operation.get("last"):
+            attributes.append({
+                "key": "gcp.operation.last",
+                "value": {"boolValue": True},
+            })
+
+    # Source location (file, line, function)
+    source_location = log_entry.get("sourceLocation")
+    if source_location:
+        sl_file = source_location.get("file", "")
+        if sl_file:
+            attributes.append({
+                "key": "code.filepath",
+                "value": {"stringValue": sl_file},
+            })
+        sl_line = source_location.get("line")
+        if sl_line:
+            attributes.append({
+                "key": "code.lineno",
+                "value": {"intValue": str(sl_line)},
+            })
+        sl_function = source_location.get("function", "")
+        if sl_function:
+            attributes.append({
+                "key": "code.function",
+                "value": {"stringValue": sl_function},
+            })
+
+    # HTTP request details
+    http_request = log_entry.get("httpRequest")
+    if http_request:
+        http_fields = [
+            ("http.request.method", "requestMethod", "stringValue"),
+            ("url.full", "requestUrl", "stringValue"),
+            ("http.response.status_code", "status", "intValue"),
+            ("user_agent.original", "userAgent", "stringValue"),
+            ("client.address", "remoteIp", "stringValue"),
+            ("server.address", "serverIp", "stringValue"),
+            ("http.request.header.referer", "referer", "stringValue"),
+            ("network.protocol.name", "protocol", "stringValue"),
+        ]
+        for attr_key, json_key, value_type in http_fields:
+            val = http_request.get(json_key)
+            if val:
+                attributes.append({
+                    "key": attr_key,
+                    "value": {value_type: str(val) if value_type == "intValue" else val},
+                })
+
+        int_fields = [
+            ("http.request.body.size", "requestSize"),
+            ("http.response.body.size", "responseSize"),
+        ]
+        for attr_key, json_key in int_fields:
+            val = http_request.get(json_key)
+            if val:
+                attributes.append({
+                    "key": attr_key,
+                    "value": {"intValue": str(val)},
+                })
+
+        latency = http_request.get("latency")
+        if latency:
+            # Latency comes as a Duration string like "0.123456s"
+            latency_str = str(latency)
+            if latency_str.endswith("s"):
+                latency_str = latency_str[:-1]
+            try:
+                latency_ms = float(latency_str) * 1000
+                attributes.append({
+                    "key": "http.request.duration_ms",
+                    "value": {"doubleValue": latency_ms},
+                })
+            except ValueError:
+                pass
+
+        cache_fields = [
+            ("gcp.http.cache_lookup", "cacheLookup"),
+            ("gcp.http.cache_hit", "cacheHit"),
+            ("gcp.http.cache_validated_with_origin_server", "cacheValidatedWithOriginServer"),
+        ]
+        for attr_key, json_key in cache_fields:
+            val = http_request.get(json_key)
+            if val is not None:
+                attributes.append({
+                    "key": attr_key,
+                    "value": {"boolValue": val},
+                })
+
+        cache_fill = http_request.get("cacheFillBytes")
+        if cache_fill:
+            attributes.append({
+                "key": "gcp.http.cache_fill_bytes",
+                "value": {"intValue": str(cache_fill)},
+            })
+
+    # Derive service.name from logName to match Go ingest routing
+    # Go code: url.PathUnescape(logName), prefix "gcp/", append "/http-requests" for HTTP logs
+    service_name = "gcp"
+    if log_name:
+        decoded_log_name = urllib.parse.unquote(log_name).strip("/")
+        if decoded_log_name:
+            service_name = "gcp/" + decoded_log_name
+            if log_entry.get("httpRequest"):
+                service_name += "/http-requests"
+
     # Build resource attributes
     resource_attributes = [
+        {
+            "key": "service.name",
+            "value": {"stringValue": service_name},
+        },
         {
             "key": "cloud.provider",
             "value": {"stringValue": "gcp"},
@@ -259,6 +406,7 @@ def post_to_firetiger(otlp_payload):
         return False
 
 
+@functions_framework.cloud_event
 def process_log_entry(cloud_event):
     """Cloud Function entry point for Pub/Sub-triggered Cloud Logging events.
 
