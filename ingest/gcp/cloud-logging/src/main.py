@@ -75,47 +75,35 @@ def log_entry_to_otlp(log_entry):
     time_unix_nano = 0
     if timestamp:
         try:
-            # Parse RFC3339 timestamp to nanoseconds
-            # Handle both "Z" suffix and "+00:00" offset
+            import datetime
+
+            # Parse RFC3339 timestamp preserving timezone offset
             ts = timestamp.replace("Z", "+00:00")
-            # Remove the timezone offset for parsing
-            if "+" in ts:
-                ts_parts = ts.rsplit("+", 1)
-                ts = ts_parts[0]
-            elif ts.count("-") > 2:
-                ts_parts = ts.rsplit("-", 1)
-                ts = ts_parts[0]
+            dt = datetime.datetime.fromisoformat(ts)
 
-            # Parse date and time parts
-            date_time = ts.split("T")
-            if len(date_time) == 2:
-                date_parts = date_time[0].split("-")
-                time_parts = date_time[1].split(":")
-                if len(date_parts) == 3 and len(time_parts) >= 2:
-                    import calendar
-                    import datetime
-
-                    # Handle fractional seconds
-                    seconds_str = time_parts[2] if len(time_parts) > 2 else "0"
-                    if "." in seconds_str:
-                        sec_parts = seconds_str.split(".")
-                        whole_seconds = int(sec_parts[0])
-                        frac = sec_parts[1][:9].ljust(9, "0")
-                        frac_nanos = int(frac)
+            # Extract fractional seconds as nanoseconds before converting
+            frac_str = ""
+            # fromisoformat handles up to 6 fractional digits (microseconds);
+            # extract raw nanosecond fraction from the original string for full precision
+            t_part = ts.split("T")[1] if "T" in ts else ""
+            dot_pos = t_part.find(".")
+            if dot_pos >= 0:
+                # Grab digits between '.' and the timezone offset (+/-)
+                after_dot = t_part[dot_pos + 1:]
+                frac_digits = ""
+                for ch in after_dot:
+                    if ch.isdigit():
+                        frac_digits += ch
                     else:
-                        whole_seconds = int(seconds_str)
-                        frac_nanos = 0
+                        break
+                frac_str = frac_digits[:9].ljust(9, "0")
 
-                    dt = datetime.datetime(
-                        int(date_parts[0]),
-                        int(date_parts[1]),
-                        int(date_parts[2]),
-                        int(time_parts[0]),
-                        int(time_parts[1]),
-                        whole_seconds,
-                        tzinfo=datetime.timezone.utc,
-                    )
-                    time_unix_nano = int(calendar.timegm(dt.timetuple())) * 1_000_000_000 + frac_nanos
+            frac_nanos = int(frac_str) if frac_str else 0
+
+            # Convert to UTC epoch seconds (handles timezone offsets correctly)
+            epoch = int(dt.timestamp())
+            # dt.timestamp() includes microseconds; use only whole seconds + raw nanos
+            time_unix_nano = epoch * 1_000_000_000 + frac_nanos
         except (ValueError, IndexError, OverflowError):
             time_unix_nano = int(time.time() * 1_000_000_000)
 
