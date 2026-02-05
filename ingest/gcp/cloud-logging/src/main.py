@@ -42,6 +42,33 @@ def get_auth_header():
     return "Basic " + encoded
 
 
+def _is_own_log_entry(log_entry_bytes):
+    """Check if this log entry was produced by this function itself.
+
+    Prevents a feedback loop where the function's own Cloud Logging output
+    gets routed back through the Pub/Sub sink and re-forwarded indefinitely.
+    """
+    import json
+
+    k_service = os.environ.get("K_SERVICE")
+    if not k_service:
+        return False
+
+    try:
+        entry = json.loads(log_entry_bytes)
+    except (json.JSONDecodeError, ValueError):
+        return False
+
+    resource = entry.get("resource", {})
+    labels = resource.get("labels", {})
+    if labels.get("service_name") == k_service:
+        return True
+    if labels.get("function_name") == k_service:
+        return True
+
+    return False
+
+
 @functions_framework.cloud_event
 def process_log_entry(cloud_event):
     """Cloud Function entry point for Pub/Sub-triggered Cloud Logging events.
@@ -60,6 +87,9 @@ def process_log_entry(cloud_event):
 
     log_entry_json = base64.b64decode(message_data)
 
+    if _is_own_log_entry(log_entry_json):
+        return
+
     endpoint = get_firetiger_endpoint()
     headers = {
         "Content-Type": "application/json",
@@ -74,9 +104,7 @@ def process_log_entry(cloud_event):
 
     try:
         with urllib.request.urlopen(req, timeout=30) as response:
-            if response.status in (200, 202):
-                logger.info("Forwarded log entry to Firetiger (status: %d)", response.status)
-            else:
+            if response.status not in (200, 202):
                 response_text = response.read().decode("utf-8")
                 logger.error("Firetiger returned status %d: %s", response.status, response_text)
     except urllib.error.HTTPError as e:
