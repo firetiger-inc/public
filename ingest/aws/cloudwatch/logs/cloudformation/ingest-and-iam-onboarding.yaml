@@ -276,6 +276,8 @@ Resources:
       ManagedPolicyArns:
         # CloudWatch Logs read-only access for log querying
         - arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess
+        # Full account read-only access for resource discovery
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
       Tags:
         - Key: ManagedBy
           Value: CloudFormation
