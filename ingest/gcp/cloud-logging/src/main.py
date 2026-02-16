@@ -10,14 +10,9 @@ Uses Python standard library for HTTP to minimize cold start time.
 
 import os
 import urllib.request
-import urllib.error
 from base64 import b64encode
-import logging
 
 import functions_framework
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def get_firetiger_endpoint():
@@ -42,33 +37,6 @@ def get_auth_header():
     return "Basic " + encoded
 
 
-def _is_own_log_entry(log_entry_bytes):
-    """Check if this log entry was produced by this function itself.
-
-    Prevents a feedback loop where the function's own Cloud Logging output
-    gets routed back through the Pub/Sub sink and re-forwarded indefinitely.
-    """
-    import json
-
-    k_service = os.environ.get("K_SERVICE")
-    if not k_service:
-        return False
-
-    try:
-        entry = json.loads(log_entry_bytes)
-    except (json.JSONDecodeError, ValueError):
-        return False
-
-    resource = entry.get("resource", {})
-    labels = resource.get("labels", {})
-    if labels.get("service_name") == k_service:
-        return True
-    if labels.get("function_name") == k_service:
-        return True
-
-    return False
-
-
 @functions_framework.cloud_event
 def process_log_entry(cloud_event):
     """Cloud Function entry point for Pub/Sub-triggered Cloud Logging events.
@@ -82,13 +50,9 @@ def process_log_entry(cloud_event):
     message_data = pubsub_message.get("data", "")
 
     if not message_data:
-        logger.warning("Received empty Pub/Sub message")
         return
 
     log_entry_json = base64.b64decode(message_data)
-
-    if _is_own_log_entry(log_entry_json):
-        return
 
     endpoint = get_firetiger_endpoint()
     headers = {
@@ -102,15 +66,7 @@ def process_log_entry(cloud_event):
 
     req = urllib.request.Request(endpoint, data=log_entry_json, headers=headers)
 
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            if response.status not in (200, 202):
-                response_text = response.read().decode("utf-8")
-                logger.error("Firetiger returned status %d: %s", response.status, response_text)
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8") if e.fp else "No error details"
-        logger.error("HTTP error %d: %s", e.code, error_body)
-        raise
-    except urllib.error.URLError as e:
-        logger.error("URL/Network error: %s", e.reason)
-        raise
+    # No logging here - any logs would go to Cloud Logging and create a feedback loop.
+    # Exceptions propagate to GCP Cloud Functions runtime which handles retries.
+    with urllib.request.urlopen(req, timeout=30) as response:
+        pass  # Success - 2xx responses. Non-2xx raises HTTPError.
