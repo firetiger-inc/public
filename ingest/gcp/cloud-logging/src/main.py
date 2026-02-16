@@ -10,14 +10,9 @@ Uses Python standard library for HTTP to minimize cold start time.
 
 import os
 import urllib.request
-import urllib.error
 from base64 import b64encode
-import logging
 
 import functions_framework
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 def get_firetiger_endpoint():
@@ -55,7 +50,6 @@ def process_log_entry(cloud_event):
     message_data = pubsub_message.get("data", "")
 
     if not message_data:
-        logger.warning("Received empty Pub/Sub message")
         return
 
     log_entry_json = base64.b64decode(message_data)
@@ -72,17 +66,7 @@ def process_log_entry(cloud_event):
 
     req = urllib.request.Request(endpoint, data=log_entry_json, headers=headers)
 
-    try:
-        with urllib.request.urlopen(req, timeout=30) as response:
-            if response.status in (200, 202):
-                logger.info("Forwarded log entry to Firetiger (status: %d)", response.status)
-            else:
-                response_text = response.read().decode("utf-8")
-                logger.error("Firetiger returned status %d: %s", response.status, response_text)
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode("utf-8") if e.fp else "No error details"
-        logger.error("HTTP error %d: %s", e.code, error_body)
-        raise
-    except urllib.error.URLError as e:
-        logger.error("URL/Network error: %s", e.reason)
-        raise
+    # No logging here - any logs would go to Cloud Logging and create a feedback loop.
+    # Exceptions propagate to GCP Cloud Functions runtime which handles retries.
+    with urllib.request.urlopen(req, timeout=30) as response:
+        pass  # Success - 2xx responses. Non-2xx raises HTTPError.
