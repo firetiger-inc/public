@@ -30,8 +30,9 @@ Parameters:
 
   FiretigerAWSAccountId:
     Type: String
-    Description: "Firetiger's AWS account ID for cross-account access"
-    Default: "975050257559"
+    Description: "Firetiger's AWS account ID for cross-account access (provided by Firetiger during onboarding)"
+    AllowedPattern: "^\\d{12}$"
+    ConstraintDescription: "Must be a 12-digit AWS account ID"
 
   FiretigerExternalId:
     Type: String
