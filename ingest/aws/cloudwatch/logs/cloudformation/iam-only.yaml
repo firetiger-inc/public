@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Firetiger IAM Role - Cross-account IAM role for Firetiger access with configurable permissions"
+
+# ==============================================================================
+# Template Parameters
+# ==============================================================================
+
+Parameters:
+  FiretigerAWSAccountId:
+    Type: String
+    Description: "Firetiger's AWS account ID for cross-account access (provided by Firetiger during onboarding)"
+    AllowedPattern: "^\\d{12}$"
+    ConstraintDescription: "Must be a 12-digit AWS account ID"
+
+  FiretigerExternalId:
+    Type: String
+    Description: "External ID for secure cross-account role assumption (provided by Firetiger)"
+    AllowedPattern: "^[a-f0-9-]{36}$"
+    ConstraintDescription: "Must be a valid UUID (e.g., 550e8400-e29b-41d4-a716-446655440000)"
+
+  ManagedPolicyArns:
+    Type: CommaDelimitedList
+    Description: >-
+      Comma-separated list of AWS managed policy ARNs to attach to the Firetiger access role.
+      These control what permissions Firetiger has in your AWS account.
+      Examples:
+      'arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess' (read CloudWatch Logs),
+      'arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess' (read all CloudWatch data),
+      'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess' (read RDS metadata).
+      Multiple policies can be combined for broader access.
+    Default: "arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess"
+
+# ==============================================================================
+# Resources
+# ==============================================================================
+
+Resources:
+  FiretigerAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}@FiretigerAccessRole"
+      Description: "Cross-account role for Firetiger to access AWS resources"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${FiretigerAWSAccountId}:root"
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref FiretigerExternalId
+      ManagedPolicyArns: !Ref ManagedPolicyArns
+      Tags:
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: Project
+          Value: Firetiger
+        - Key: Purpose
+          Value: CrossAccountAccess
+
+# ==============================================================================
+# Outputs
+# ==============================================================================
+
+Outputs:
+  FiretigerRoleArn:
+    Description: "ARN of the IAM role for Firetiger cross-account access (copy this to Firetiger)"
+    Value: !GetAtt FiretigerAccessRole.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-FiretigerRoleArn"
+
+  FiretigerExternalId:
+    Description: "External ID for Firetiger role assumption (provided by Firetiger, no need to copy)"
+    Value: !Ref FiretigerExternalId
+    Export:
+      Name: !Sub "${AWS::StackName}-FiretigerExternalId"
+
+  AttachedPolicies:
+    Description: "Managed policy ARNs attached to the Firetiger access role"
+    Value: !Join [", ", !Ref ManagedPolicyArns]
+
+  SetupCompleteMessage:
+    Description: "Setup completion message with next steps"
+    Value: !Sub |
+      Firetiger IAM role deployed successfully!
+
+      Copy this value from the Outputs tab to Firetiger:
+      - Role ARN: See FiretigerRoleArn output
+
+      Next steps:
+      1. Enter the Role ARN in the Firetiger UI (External ID is already configured)
+      2. Click "Verify Connection" to test the setup
+      3. Optionally deploy the CloudWatch Logs forwarding stack for log ingestion
