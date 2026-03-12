@@ -39,7 +39,6 @@ resource "aws_s3_object" "openapi_spec" {
 
   metadata = {
     description = "Vanta API OpenAPI Specification"
-    updated     = timestamp()
   }
 }
 
