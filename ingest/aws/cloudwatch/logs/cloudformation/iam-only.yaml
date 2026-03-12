@@ -24,10 +24,11 @@ Parameters:
       Comma-separated list of AWS managed policy ARNs to attach to the Firetiger access role.
       These control what permissions Firetiger has in your AWS account.
       Examples:
+      'arn:aws:iam::aws:policy/ReadOnlyAccess' (broad read-only access across AWS services),
       'arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess' (read all CloudWatch data),
       'arn:aws:iam::aws:policy/AmazonRDSReadOnlyAccess' (read RDS metadata).
       Multiple policies can be combined for broader access.
-    Default: "arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess"
+    Default: "arn:aws:iam::aws:policy/ReadOnlyAccess"
 
 # ==============================================================================
 # Resources
