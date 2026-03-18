@@ -18676,7 +18676,7 @@
     },
     "/v1/controls": {
       "post": {
-        "operationId": "CreateCustomControl",
+        "operationId": "CreateControl",
         "responses": {
           "201": {
             "description": "Custom Control created",
@@ -30577,7 +30577,7 @@
     },
     "/v1/vulnerabilities": {
       "get": {
-        "operationId": "ListVulnerabilities",
+        "operationId": "ListOrgVulnerabilities",
         "responses": {
           "200": {
             "description": "Ok",
