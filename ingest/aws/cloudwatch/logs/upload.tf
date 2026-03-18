@@ -119,6 +119,23 @@ resource "aws_s3_object" "cloudformation_template_with_iam" {
   }
 }
 
+# Upload IAM-only CloudFormation template to S3
+resource "aws_s3_object" "cloudformation_template_iam_only" {
+  bucket = data.aws_s3_bucket.firetiger_public.id
+  key    = "ingest/aws/cloudwatch/logs/iam-only.yaml"
+  source = "${path.module}/cloudformation/iam-only.yaml"
+
+  content_type = "text/yaml"
+  etag         = filemd5("${path.module}/cloudformation/iam-only.yaml")
+
+  metadata = {
+    description = "Firetiger IAM-Only CloudFormation Template for cross-account access"
+    version     = "1.0"
+    integration = "iam-role"
+    updated     = timestamp()
+  }
+}
+
 # Outputs for reference
 output "lambda_s3_urls" {
   description = "S3 URLs for Lambda packages"
@@ -154,5 +171,15 @@ output "cloudformation_quick_deploy_url" {
 output "cloudformation_quick_deploy_onboarding_url" {
   description = "One-click CloudFormation deployment URL with IAM role"
   value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_with_iam.key}&stackName=firetiger-ingest-and-iam-onboarding"
+}
+
+output "cloudformation_iam_only_template_url" {
+  description = "HTTPS URL for IAM-only CloudFormation template"
+  value       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_iam_only.key}"
+}
+
+output "cloudformation_quick_deploy_iam_only_url" {
+  description = "One-click CloudFormation deployment URL for IAM-only template"
+  value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_iam_only.key}&stackName=firetiger-iam-role"
 }
 
