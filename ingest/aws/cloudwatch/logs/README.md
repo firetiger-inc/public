@@ -74,6 +74,60 @@ aws cloudformation create-stack \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
+## Multi-Region Deployment
+
+IAM roles are global — you only need to create the Firetiger access role once per AWS account, regardless of how many regions you deploy to.
+
+### Recommended approach: separate IAM and ingest stacks
+
+1. **Deploy IAM role once** (any region):
+   ```bash
+   aws cloudformation create-stack \
+     --stack-name firetiger-iam-role \
+     --template-url https://s3.amazonaws.com/firetiger-public/ingest/aws/cloudwatch/logs/iam-only.yaml \
+     --parameters \
+       ParameterKey=FiretigerAWSAccountId,ParameterValue=<account-id> \
+       ParameterKey=FiretigerExternalId,ParameterValue=<external-id> \
+     --capabilities CAPABILITY_NAMED_IAM
+   ```
+
+2. **Deploy ingest stack per region**:
+   ```bash
+   aws cloudformation create-stack \
+     --region us-west-2 \
+     --stack-name firetiger-ingest-cloudwatch-logs \
+     --template-url https://s3.amazonaws.com/firetiger-public/ingest/aws/cloudwatch/logs/cloudformation-template.yaml \
+     --parameters \
+       ParameterKey=FiretigerEndpoint,ParameterValue=https://ingest.example.firetigerapi.com \
+     --capabilities CAPABILITY_NAMED_IAM
+   ```
+   Repeat for each region (`us-east-1`, `eu-west-1`, etc.).
+
+### Alternative: combined template with conditional IAM
+
+Use `ingest-and-iam-onboarding.yaml` with `CreateFiretigerAccessRole=false` for additional regions:
+
+```bash
+# First region (creates IAM role + ingest)
+aws cloudformation create-stack --region us-west-2 \
+  --stack-name firetiger-ingest --template-url <onboarding-url> \
+  --parameters ParameterKey=FiretigerEndpoint,ParameterValue=<endpoint> \
+    ParameterKey=FiretigerAWSAccountId,ParameterValue=<account-id> \
+    ParameterKey=FiretigerExternalId,ParameterValue=<external-id> \
+  --capabilities CAPABILITY_NAMED_IAM
+
+# Additional regions (ingest only, skip IAM)
+aws cloudformation create-stack --region eu-west-1 \
+  --stack-name firetiger-ingest --template-url <onboarding-url> \
+  --parameters ParameterKey=FiretigerEndpoint,ParameterValue=<endpoint> \
+    ParameterKey=CreateFiretigerAccessRole,ParameterValue=false \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+### Supported regions
+
+us-east-1, us-east-2, us-west-1, us-west-2, ca-central-1, eu-west-1, eu-west-2, eu-west-3, eu-central-1, eu-north-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, ap-northeast-2, ap-south-1, sa-east-1
+
 ## Configuration
 
 ### Required Parameters

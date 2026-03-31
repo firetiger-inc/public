@@ -1,8 +1,9 @@
 # ==============================================================================
-# Upload Lambda packages to S3
-# 
-# This configuration uploads the Lambda deployment packages to the 
-# firetiger-public S3 bucket for use by both CloudFormation and Terraform.
+# Upload Lambda packages and CloudFormation templates to S3
+#
+# Lambda zips are uploaded to regional buckets (firetiger-public-{region})
+# because Lambda requires code to be in the same region as the function.
+# CloudFormation templates are uploaded to the global firetiger-public bucket.
 # ==============================================================================
 
 terraform {
@@ -26,11 +27,35 @@ terraform {
   }
 }
 
-data "aws_s3_bucket" "firetiger_public" {
-  bucket = "firetiger-public"
+# ==============================================================================
+# Supported regions
+# ==============================================================================
+
+locals {
+  supported_regions = toset([
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2",
+    "ca-central-1",
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3",
+    "eu-central-1",
+    "eu-north-1",
+    "ap-southeast-1",
+    "ap-southeast-2",
+    "ap-northeast-1",
+    "ap-northeast-2",
+    "ap-south-1",
+    "sa-east-1",
+  ])
 }
 
-# Create Lambda deployment packages locally
+# ==============================================================================
+# Build Lambda deployment packages
+# ==============================================================================
+
 data "archive_file" "ingester" {
   type        = "zip"
   output_path = "${path.module}/build/ingester.zip"
@@ -49,12 +74,16 @@ data "archive_file" "filter_manager" {
   }
 }
 
-# Upload Ingester Lambda package to S3
-resource "aws_s3_object" "ingester_lambda" {
-  bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
-  source = data.archive_file.ingester.output_path
+# ==============================================================================
+# Upload Lambda zips to all regional buckets
+# ==============================================================================
 
+resource "aws_s3_object" "ingester_lambda" {
+  for_each = local.supported_regions
+
+  bucket       = "firetiger-public-${each.key}"
+  key          = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
+  source       = data.archive_file.ingester.output_path
   content_type = "application/zip"
   etag         = data.archive_file.ingester.output_md5
 
@@ -66,12 +95,12 @@ resource "aws_s3_object" "ingester_lambda" {
   }
 }
 
-# Upload Filter Manager Lambda package to S3
 resource "aws_s3_object" "filter_manager_lambda" {
-  bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
-  source = data.archive_file.filter_manager.output_path
+  for_each = local.supported_regions
 
+  bucket       = "firetiger-public-${each.key}"
+  key          = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
+  source       = data.archive_file.filter_manager.output_path
   content_type = "application/zip"
   etag         = data.archive_file.filter_manager.output_md5
 
@@ -83,7 +112,15 @@ resource "aws_s3_object" "filter_manager_lambda" {
   }
 }
 
-# Upload CloudFormation template to S3
+# ==============================================================================
+# Upload CloudFormation templates to global bucket
+# (Templates are not region-specific, only Lambda code must be co-regional)
+# ==============================================================================
+
+data "aws_s3_bucket" "firetiger_public" {
+  bucket = "firetiger-public"
+}
+
 resource "aws_s3_object" "cloudformation_template" {
   bucket = data.aws_s3_bucket.firetiger_public.id
   key    = "ingest/aws/cloudwatch/logs/cloudformation-template.yaml"
@@ -91,8 +128,6 @@ resource "aws_s3_object" "cloudformation_template" {
 
   content_type = "text/yaml"
   etag         = filemd5("${path.module}/cloudformation/template.yaml")
-
-  # Object will be publicly accessible via bucket policy
 
   metadata = {
     description = "Firetiger CloudWatch Logs Integration CloudFormation Template"
@@ -102,7 +137,6 @@ resource "aws_s3_object" "cloudformation_template" {
   }
 }
 
-# Upload CloudFormation template with IAM role to S3
 resource "aws_s3_object" "cloudformation_template_with_iam" {
   bucket = data.aws_s3_bucket.firetiger_public.id
   key    = "ingest/aws/cloudwatch/logs/ingest-and-iam-onboarding.yaml"
@@ -119,7 +153,6 @@ resource "aws_s3_object" "cloudformation_template_with_iam" {
   }
 }
 
-# Upload IAM-only CloudFormation template to S3
 resource "aws_s3_object" "cloudformation_template_iam_only" {
   bucket = data.aws_s3_bucket.firetiger_public.id
   key    = "ingest/aws/cloudwatch/logs/iam-only.yaml"
@@ -136,22 +169,9 @@ resource "aws_s3_object" "cloudformation_template_iam_only" {
   }
 }
 
-# Outputs for reference
-output "lambda_s3_urls" {
-  description = "S3 URLs for Lambda packages"
-  value = {
-    ingester       = "s3://${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.ingester_lambda.key}"
-    filter_manager = "s3://${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.filter_manager_lambda.key}"
-  }
-}
-
-output "lambda_https_urls" {
-  description = "HTTPS URLs for Lambda packages"
-  value = {
-    ingester       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.ingester_lambda.key}"
-    filter_manager = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.filter_manager_lambda.key}"
-  }
-}
+# ==============================================================================
+# Outputs
+# ==============================================================================
 
 output "cloudformation_template_url" {
   description = "HTTPS URL for CloudFormation template"
@@ -183,3 +203,7 @@ output "cloudformation_quick_deploy_iam_only_url" {
   value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_iam_only.key}&stackName=firetiger-iam-role"
 }
 
+output "supported_regions" {
+  description = "AWS regions where Lambda packages are available"
+  value       = local.supported_regions
+}
