@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Firetiger IAM Role - Cross-account IAM role for Firetiger access with configurable permissions"
+Description: "Firetiger IAM Role - Cross-account IAM role for Firetiger access with configurable permissions. Deploy once per AWS account (IAM is global). Use with template.yaml in each region for multi-region deployments."
 
 # ==============================================================================
 # Template Parameters
@@ -91,4 +91,5 @@ Outputs:
       Next steps:
       1. Enter the Role ARN in the Firetiger UI (External ID is already configured)
       2. Click "Verify Connection" to test the setup
-      3. Optionally deploy the CloudWatch Logs forwarding stack for log ingestion
+      3. Deploy the CloudWatch Logs forwarding stack (template.yaml) in each region you want to ingest logs from
+      4. This IAM role grants access across all regions - you do not need to create it again

@@ -1,8 +1,9 @@
 # ==============================================================================
-# Upload Lambda packages to S3
-# 
-# This configuration uploads the Lambda deployment packages to the 
-# firetiger-public S3 bucket for use by both CloudFormation and Terraform.
+# Upload Lambda packages and CloudFormation templates to S3
+#
+# Lambda zips are uploaded to regional buckets (firetiger-public-{region})
+# because Lambda requires code to be in the same region as the function.
+# CloudFormation templates are uploaded to the global firetiger-public bucket.
 # ==============================================================================
 
 terraform {
@@ -26,11 +27,94 @@ terraform {
   }
 }
 
-data "aws_s3_bucket" "firetiger_public" {
-  bucket = "firetiger-public"
+# ==============================================================================
+# Regional AWS providers
+# ==============================================================================
+
+provider "aws" {
+  alias  = "us-east-1"
+  region = "us-east-1"
 }
 
-# Create Lambda deployment packages locally
+provider "aws" {
+  alias  = "us-east-2"
+  region = "us-east-2"
+}
+
+provider "aws" {
+  alias  = "us-west-1"
+  region = "us-west-1"
+}
+
+provider "aws" {
+  alias  = "us-west-2"
+  region = "us-west-2"
+}
+
+provider "aws" {
+  alias  = "ca-central-1"
+  region = "ca-central-1"
+}
+
+provider "aws" {
+  alias  = "eu-west-1"
+  region = "eu-west-1"
+}
+
+provider "aws" {
+  alias  = "eu-west-2"
+  region = "eu-west-2"
+}
+
+provider "aws" {
+  alias  = "eu-west-3"
+  region = "eu-west-3"
+}
+
+provider "aws" {
+  alias  = "eu-central-1"
+  region = "eu-central-1"
+}
+
+provider "aws" {
+  alias  = "eu-north-1"
+  region = "eu-north-1"
+}
+
+provider "aws" {
+  alias  = "ap-southeast-1"
+  region = "ap-southeast-1"
+}
+
+provider "aws" {
+  alias  = "ap-southeast-2"
+  region = "ap-southeast-2"
+}
+
+provider "aws" {
+  alias  = "ap-northeast-1"
+  region = "ap-northeast-1"
+}
+
+provider "aws" {
+  alias  = "ap-northeast-2"
+  region = "ap-northeast-2"
+}
+
+provider "aws" {
+  alias  = "ap-south-1"
+  region = "ap-south-1"
+}
+
+provider "aws" {
+  alias  = "sa-east-1"
+  region = "sa-east-1"
+}
+
+# ==============================================================================
+# Build Lambda deployment packages
+# ==============================================================================
+
 data "archive_file" "ingester" {
   type        = "zip"
   output_path = "${path.module}/build/ingester.zip"
@@ -49,41 +133,179 @@ data "archive_file" "filter_manager" {
   }
 }
 
-# Upload Ingester Lambda package to S3
-resource "aws_s3_object" "ingester_lambda" {
-  bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "ingest/aws/cloudwatch/logs/lambda/ingester.zip"
-  source = data.archive_file.ingester.output_path
+# ==============================================================================
+# Upload Lambda zips to all regional buckets
+# ==============================================================================
 
-  content_type = "application/zip"
-  etag         = data.archive_file.ingester.output_md5
+module "upload_us_east_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.us-east-1 }
 
-  metadata = {
-    description = "Firetiger CloudWatch Logs Ingester Lambda Function"
-    version     = "1.0"
-    integration = "cloudwatch-logs"
-    updated     = timestamp()
-  }
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
 }
 
-# Upload Filter Manager Lambda package to S3
-resource "aws_s3_object" "filter_manager_lambda" {
-  bucket = data.aws_s3_bucket.firetiger_public.id
-  key    = "ingest/aws/cloudwatch/logs/lambda/filter_manager.zip"
-  source = data.archive_file.filter_manager.output_path
+module "upload_us_east_2" {
+  source    = "./regional-upload"
+  providers = { aws = aws.us-east-2 }
 
-  content_type = "application/zip"
-  etag         = data.archive_file.filter_manager.output_md5
-
-  metadata = {
-    description = "Firetiger CloudWatch Logs Subscription Filter Manager Lambda Function"
-    version     = "1.0"
-    integration = "cloudwatch-logs"
-    updated     = timestamp()
-  }
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
 }
 
-# Upload CloudFormation template to S3
+module "upload_us_west_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.us-west-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_us_west_2" {
+  source    = "./regional-upload"
+  providers = { aws = aws.us-west-2 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_ca_central_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.ca-central-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_eu_west_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.eu-west-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_eu_west_2" {
+  source    = "./regional-upload"
+  providers = { aws = aws.eu-west-2 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_eu_west_3" {
+  source    = "./regional-upload"
+  providers = { aws = aws.eu-west-3 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_eu_central_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.eu-central-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_eu_north_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.eu-north-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_ap_southeast_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.ap-southeast-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_ap_southeast_2" {
+  source    = "./regional-upload"
+  providers = { aws = aws.ap-southeast-2 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_ap_northeast_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.ap-northeast-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_ap_northeast_2" {
+  source    = "./regional-upload"
+  providers = { aws = aws.ap-northeast-2 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_ap_south_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.ap-south-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+module "upload_sa_east_1" {
+  source    = "./regional-upload"
+  providers = { aws = aws.sa-east-1 }
+
+  ingester_source       = data.archive_file.ingester.output_path
+  ingester_etag         = data.archive_file.ingester.output_md5
+  filter_manager_source = data.archive_file.filter_manager.output_path
+  filter_manager_etag   = data.archive_file.filter_manager.output_md5
+}
+
+# ==============================================================================
+# Upload CloudFormation templates to global bucket
+# (Templates are not region-specific, only Lambda code must be co-regional)
+# ==============================================================================
+
+data "aws_s3_bucket" "firetiger_public" {
+  bucket = "firetiger-public"
+}
+
 resource "aws_s3_object" "cloudformation_template" {
   bucket = data.aws_s3_bucket.firetiger_public.id
   key    = "ingest/aws/cloudwatch/logs/cloudformation-template.yaml"
@@ -91,8 +313,6 @@ resource "aws_s3_object" "cloudformation_template" {
 
   content_type = "text/yaml"
   etag         = filemd5("${path.module}/cloudformation/template.yaml")
-
-  # Object will be publicly accessible via bucket policy
 
   metadata = {
     description = "Firetiger CloudWatch Logs Integration CloudFormation Template"
@@ -102,7 +322,6 @@ resource "aws_s3_object" "cloudformation_template" {
   }
 }
 
-# Upload CloudFormation template with IAM role to S3
 resource "aws_s3_object" "cloudformation_template_with_iam" {
   bucket = data.aws_s3_bucket.firetiger_public.id
   key    = "ingest/aws/cloudwatch/logs/ingest-and-iam-onboarding.yaml"
@@ -119,7 +338,6 @@ resource "aws_s3_object" "cloudformation_template_with_iam" {
   }
 }
 
-# Upload IAM-only CloudFormation template to S3
 resource "aws_s3_object" "cloudformation_template_iam_only" {
   bucket = data.aws_s3_bucket.firetiger_public.id
   key    = "ingest/aws/cloudwatch/logs/iam-only.yaml"
@@ -136,22 +354,9 @@ resource "aws_s3_object" "cloudformation_template_iam_only" {
   }
 }
 
-# Outputs for reference
-output "lambda_s3_urls" {
-  description = "S3 URLs for Lambda packages"
-  value = {
-    ingester       = "s3://${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.ingester_lambda.key}"
-    filter_manager = "s3://${data.aws_s3_bucket.firetiger_public.id}/${aws_s3_object.filter_manager_lambda.key}"
-  }
-}
-
-output "lambda_https_urls" {
-  description = "HTTPS URLs for Lambda packages"
-  value = {
-    ingester       = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.ingester_lambda.key}"
-    filter_manager = "https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.filter_manager_lambda.key}"
-  }
-}
+# ==============================================================================
+# Outputs
+# ==============================================================================
 
 output "cloudformation_template_url" {
   description = "HTTPS URL for CloudFormation template"
@@ -182,4 +387,3 @@ output "cloudformation_quick_deploy_iam_only_url" {
   description = "One-click CloudFormation deployment URL for IAM-only template"
   value       = "https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://${data.aws_s3_bucket.firetiger_public.bucket_regional_domain_name}/${aws_s3_object.cloudformation_template_iam_only.key}&stackName=firetiger-iam-role"
 }
-
