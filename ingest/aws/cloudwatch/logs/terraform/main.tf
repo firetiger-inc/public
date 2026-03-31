@@ -132,7 +132,7 @@ locals {
   # Convert patterns to regex and filter log groups
   matching_log_groups = [
     for log_group in data.aws_cloudwatch_log_groups.all.log_group_names : log_group
-    if anytrue([
+    if log_group != aws_cloudwatch_log_group.lambda_log_group.name && anytrue([
       for pattern in var.log_group_patterns :
       pattern == "*" || can(regex(replace(pattern, "*", ".*"), log_group))
     ])

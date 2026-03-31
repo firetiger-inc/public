@@ -209,6 +209,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt SubscriptionFilterManagerFunction.Arn
       LambdaArn: !GetAtt CloudWatchLogsIngesterFunction.Arn
+      LambdaLogGroupName: !Ref LambdaLogGroup
       FilterPattern: !Ref SubscriptionFilterPattern
       LogGroupPatterns: !Ref LogGroupPatterns
       StackName: !Ref AWS::StackName
