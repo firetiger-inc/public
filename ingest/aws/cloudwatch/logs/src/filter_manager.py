@@ -109,6 +109,7 @@ def lambda_handler(event, context):
         logs_client = boto3.client("logs")
 
         lambda_arn = event["ResourceProperties"]["LambdaArn"]
+        lambda_log_group_name = event["ResourceProperties"].get("LambdaLogGroupName", "")
         filter_pattern = event["ResourceProperties"]["FilterPattern"]
         log_group_patterns = event["ResourceProperties"]["LogGroupPatterns"]
         stack_name = event["ResourceProperties"]["StackName"]
@@ -121,9 +122,11 @@ def lambda_handler(event, context):
             for page in paginator.paginate():
                 all_log_groups.extend([lg["logGroupName"] for lg in page["logGroups"]])
 
-            # Filter log groups based on patterns
+            # Filter log groups based on patterns, excluding the ingester's own log group
             matched_groups = []
             for log_group in all_log_groups:
+                if log_group == lambda_log_group_name:
+                    continue
                 for pattern in log_group_patterns:
                     if pattern == "*" or re.search(pattern, log_group):
                         matched_groups.append(log_group)
