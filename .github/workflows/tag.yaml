@@ -1,0 +1,57 @@
+name: Tag Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: tag-main
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Compute version
+        id: version
+        run: |
+          DATE=$(date -u +%Y.%-m.%-d)
+          SHA=$(git rev-parse --short=6 "$GITHUB_SHA")
+          VERSION="${DATE}-${SHA}"
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+            echo "::error::Computed version '$VERSION' is not valid SemVer"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if git rev-parse --verify --quiet "refs/tags/${VERSION}"; then
+            echo "Tag ${VERSION} already exists, skipping"
+            exit 0
+          fi
+          git tag -a "${VERSION}" -m "Release ${VERSION}" "$GITHUB_SHA"
+          git push origin "refs/tags/${VERSION}"
+
+      - name: Summary
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          {
+            echo "## Tagged \`${VERSION}\`"
+            echo ""
+            echo "Pin a module in terraform:"
+            echo ""
+            echo '```hcl'
+            echo "module \"firetiger_cloudwatch_logs\" {"
+            echo "  source = \"github.com/firetiger-inc/public//ingest/aws/cloudwatch/logs/terraform?ref=${VERSION}\""
+            echo "}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
