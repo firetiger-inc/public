@@ -23,7 +23,7 @@ jobs:
         id: version
         run: |
           DATE=$(date -u +%Y.%-m.%-d)
-          SHA=$(git rev-parse --short=6 "$GITHUB_SHA")
+          SHA=$(git rev-parse --short=7 "$GITHUB_SHA")
           VERSION="${DATE}-${SHA}"
           if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
             echo "::error::Computed version '$VERSION' is not valid SemVer"
