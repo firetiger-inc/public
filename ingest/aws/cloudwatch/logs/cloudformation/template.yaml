@@ -65,6 +65,15 @@ Parameters:
     MinValue: 128
     MaxValue: 10240
 
+  LambdaReservedConcurrency:
+    Type: Number
+    Description: >-
+      Reserved concurrent executions for the ingester Lambda. Caps parallel
+      invocations so the function cannot exhaust the account-wide Lambda
+      concurrency budget.
+    Default: 50
+    MinValue: 1
+
   LogRetentionDays:
     Type: Number
     Description: >-
@@ -163,6 +172,7 @@ Resources:
             !If [HasBasicAuth, !Ref FiretigerPassword, !Ref "AWS::NoValue"]
       Timeout: !Ref LambdaTimeoutSeconds
       MemorySize: !Ref LambdaMemorySizeMb
+      ReservedConcurrentExecutions: !Ref LambdaReservedConcurrency
       Architectures:
         - x86_64
       LoggingConfig:
@@ -204,6 +214,7 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt SubscriptionFilterManagerRole.Arn
       Timeout: 300
+      ReservedConcurrentExecutions: 2
       Code:
         S3Bucket: !Sub "firetiger-public-${AWS::Region}"
         S3Key: ingest/aws/cloudwatch/logs/lambda/filter_manager.zip

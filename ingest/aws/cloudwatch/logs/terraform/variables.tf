@@ -49,10 +49,21 @@ variable "lambda_memory_size_mb" {
   type        = number
   description = "Lambda function memory size in MB"
   default     = 256
-  
+
   validation {
     condition     = var.lambda_memory_size_mb >= 128 && var.lambda_memory_size_mb <= 10240
     error_message = "Lambda memory size must be between 128 and 10240 MB."
+  }
+}
+
+variable "lambda_reserved_concurrency" {
+  type        = number
+  description = "Reserved concurrent executions for the ingester Lambda. Caps parallel invocations so the function cannot exhaust the account-wide concurrency budget."
+  default     = 50
+
+  validation {
+    condition     = var.lambda_reserved_concurrency >= 1
+    error_message = "Reserved concurrency must be a positive integer."
   }
 }
 
