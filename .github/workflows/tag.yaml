@@ -24,8 +24,15 @@ jobs:
         run: |
           DATE=$(date -u +%Y.%-m.%-d)
           SHA=$(git rev-parse --short=7 "$GITHUB_SHA")
-          VERSION="${DATE}-${SHA}"
-          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+          # Prefix SHA with 'g' (git describe convention) so the prerelease
+          # identifier is never purely numeric — SemVer 2.0 disallows leading
+          # zeros in numeric identifiers, and 7-hex SHAs like 0873564 collide
+          # with that rule.
+          VERSION="${DATE}-g${SHA}"
+          # Require the prerelease block to contain at least one letter or
+          # hyphen so a purely-numeric identifier (which may have a leading
+          # zero) cannot slip through.
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9a-zA-Z.-]*[a-zA-Z-][0-9a-zA-Z.-]*)?$'; then
             echo "::error::Computed version '$VERSION' is not valid SemVer"
             exit 1
           fi
