@@ -106,7 +106,7 @@ Parameters:
         3653,
       ]
 
-  IamRolePrefix:
+  IamRoleNamePrefix:
     Type: String
     Description: >-
       Optional prefix prepended to the names of all IAM roles created by this
@@ -125,7 +125,7 @@ Conditions:
     - !Not [!Equals [!Ref FiretigerUsername, ""]]
     - !Not [!Equals [!Ref FiretigerPassword, ""]]
 
-  HasIamRolePrefix: !Not [!Equals [!Ref IamRolePrefix, ""]]
+  HasIamRoleNamePrefix: !Not [!Equals [!Ref IamRoleNamePrefix, ""]]
 
 # ==============================================================================
 # Resources
@@ -136,7 +136,7 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}-lambda-execution-role"
+      RoleName: !Sub "${IamRoleNamePrefix}${AWS::StackName}-lambda-execution-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -236,8 +236,8 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !If
-        - HasIamRolePrefix
-        - !Sub "${IamRolePrefix}${AWS::StackName}-subscription-filter-manager-role"
+        - HasIamRoleNamePrefix
+        - !Sub "${IamRoleNamePrefix}${AWS::StackName}-subscription-filter-manager-role"
         - !Ref "AWS::NoValue"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

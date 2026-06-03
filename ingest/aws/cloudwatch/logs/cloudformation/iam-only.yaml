@@ -30,7 +30,7 @@ Parameters:
       Multiple policies can be combined for broader access.
     Default: "arn:aws:iam::aws:policy/ReadOnlyAccess"
 
-  IamRolePrefix:
+  IamRoleNamePrefix:
     Type: String
     Description: >-
       Optional prefix prepended to the name of the IAM role created by this
@@ -49,7 +49,7 @@ Resources:
   FiretigerAccessRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}@FiretigerAccessRole"
+      RoleName: !Sub "${IamRoleNamePrefix}${AWS::StackName}@FiretigerAccessRole"
       Description: "Cross-account role for Firetiger to access AWS resources"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

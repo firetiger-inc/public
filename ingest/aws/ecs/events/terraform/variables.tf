@@ -4,7 +4,7 @@ variable "name_prefix" {
   default     = "firetiger-eventbridge-ecs"
 }
 
-variable "iam_role_prefix" {
+variable "iam_role_name_prefix" {
   type        = string
   description = "Optional prefix prepended to the names of IAM roles created by this module. Leave empty to keep the default names (based on name_prefix). Include any desired separator in the value (e.g. \"my-org-\"). Useful when your account enforces an IAM role naming convention or permission-boundary path requirement."
   default     = ""

@@ -29,7 +29,7 @@ data "aws_s3_bucket" "lambda_code_bucket" {
 # ==============================================================================
 
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "${var.iam_role_prefix}${var.name_prefix}-lambda-execution-role"
+  name = "${var.iam_role_name_prefix}${var.name_prefix}-lambda-execution-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

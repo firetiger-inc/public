@@ -61,7 +61,7 @@ aws cloudformation create-stack \
 - `event_pattern` / `EventPattern` - EventBridge rule pattern (default: STOPPED tasks)
 - `invocation_rate_per_second` / `InvocationRatePerSecond` - Rate limit (default: 1)
 - `enable_dead_letter_queue` / `EnableDeadLetterQueue` - Enable DLQ (default: true)
-- `iam_role_prefix` / `IamRolePrefix` - Optional prefix prepended to all IAM role names (default: empty, i.e. names based on `name_prefix` / the stack name). Include any separator yourself, e.g. `"my-org-"`. Useful when your account enforces an IAM role naming convention or permission-boundary path requirement.
+- `iam_role_name_prefix` / `IamRoleNamePrefix` - Optional prefix prepended to all IAM role names (default: empty, i.e. names based on `name_prefix` / the stack name). Include any separator yourself, e.g. `"my-org-"`. Useful when your account enforces an IAM role naming convention or permission-boundary path requirement.
 
 ## Event Patterns
 

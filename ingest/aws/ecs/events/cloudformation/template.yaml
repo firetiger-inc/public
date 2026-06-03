@@ -65,7 +65,7 @@ Parameters:
     Description: "EventBridge bus to use (default or custom bus name)"
     Default: "default"
 
-  IamRolePrefix:
+  IamRoleNamePrefix:
     Type: String
     Description: >-
       Optional prefix prepended to the names of all IAM roles created by this
@@ -136,7 +136,7 @@ Resources:
   EventBridgeRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}-eventbridge-role"
+      RoleName: !Sub "${IamRoleNamePrefix}${AWS::StackName}-eventbridge-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
