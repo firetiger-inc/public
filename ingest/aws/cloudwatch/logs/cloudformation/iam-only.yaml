@@ -30,6 +30,17 @@ Parameters:
       Multiple policies can be combined for broader access.
     Default: "arn:aws:iam::aws:policy/ReadOnlyAccess"
 
+  IamRolePrefix:
+    Type: String
+    Description: >-
+      Optional prefix prepended to the name of the IAM role created by this
+      template. Leave empty to keep the default name (based on the stack name).
+      Include any desired separator in the value (e.g. "my-org-"). Useful when
+      your account enforces an IAM role naming convention or permission-boundary
+      path requirement. The full role ARN is reported in the stack Outputs, so
+      the prefix does not affect Firetiger onboarding.
+    Default: ""
+
 # ==============================================================================
 # Resources
 # ==============================================================================
@@ -38,7 +49,7 @@ Resources:
   FiretigerAccessRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${AWS::StackName}@FiretigerAccessRole"
+      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}@FiretigerAccessRole"
       Description: "Cross-account role for Firetiger to access AWS resources"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

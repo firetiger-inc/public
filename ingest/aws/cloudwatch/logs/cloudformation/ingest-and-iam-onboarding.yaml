@@ -133,6 +133,18 @@ Parameters:
         3653,
       ]
 
+  IamRolePrefix:
+    Type: String
+    Description: >-
+      Optional prefix prepended to the names of all IAM roles created by this
+      template (including the cross-account FiretigerAccessRole). Leave empty to
+      keep the default names (based on the stack name). Include any desired
+      separator in the value (e.g. "my-org-"). Useful when your account enforces
+      an IAM role naming convention or permission-boundary path requirement.
+      The full role ARN is reported in the stack Outputs, so the prefix does not
+      affect Firetiger onboarding.
+    Default: ""
+
 # ==============================================================================
 # Conditions
 # ==============================================================================
@@ -142,6 +154,7 @@ Conditions:
     - !Not [!Equals [!Ref FiretigerUsername, ""]]
     - !Not [!Equals [!Ref FiretigerPassword, ""]]
   ShouldCreateIAMRole: !Equals [!Ref CreateFiretigerAccessRole, "true"]
+  HasIamRolePrefix: !Not [!Equals [!Ref IamRolePrefix, ""]]
 
 # ==============================================================================
 # Resources
@@ -152,7 +165,7 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${AWS::StackName}-lambda-execution-role"
+      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}-lambda-execution-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -251,6 +264,10 @@ Resources:
   SubscriptionFilterManagerRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !If
+        - HasIamRolePrefix
+        - !Sub "${IamRolePrefix}${AWS::StackName}-subscription-filter-manager-role"
+        - !Ref "AWS::NoValue"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -284,7 +301,7 @@ Resources:
     Type: AWS::IAM::Role
     Condition: ShouldCreateIAMRole
     Properties:
-      RoleName: !Sub "${AWS::StackName}@FiretigerAccessRole"
+      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}@FiretigerAccessRole"
       Description: "Cross-account role for Firetiger to access AWS resources (read-only)"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"

@@ -141,6 +141,7 @@ us-east-1, us-east-2, us-west-1, us-west-2, ca-central-1, eu-west-1, eu-west-2, 
 - `lambda_timeout_seconds` / `LambdaTimeoutSeconds` - Lambda timeout in seconds (default: 300)
 - `lambda_memory_size_mb` / `LambdaMemorySizeMb` - Lambda memory in MB (default: 256)
 - `log_retention_days` / `LogRetentionDays` - Lambda log retention (default: 7)
+- `iam_role_prefix` / `IamRolePrefix` - Optional prefix prepended to all IAM role names (default: empty, i.e. names based on `name_prefix` / the stack name). Include any separator yourself, e.g. `"my-org-"`. Useful when your account enforces an IAM role naming convention or permission-boundary path requirement.
 
 ## Log Group Patterns
 

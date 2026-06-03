@@ -65,6 +65,16 @@ Parameters:
     Description: "EventBridge bus to use (default or custom bus name)"
     Default: "default"
 
+  IamRolePrefix:
+    Type: String
+    Description: >-
+      Optional prefix prepended to the names of all IAM roles created by this
+      template. Leave empty to keep the default names (based on the stack name).
+      Include any desired separator in the value (e.g. "my-org-"). Useful when
+      your account enforces an IAM role naming convention or permission-boundary
+      path requirement.
+    Default: ""
+
 # ==============================================================================
 # Conditions
 # ==============================================================================
@@ -126,7 +136,7 @@ Resources:
   EventBridgeRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${AWS::StackName}-eventbridge-role"
+      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}-eventbridge-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

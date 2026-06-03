@@ -106,6 +106,16 @@ Parameters:
         3653,
       ]
 
+  IamRolePrefix:
+    Type: String
+    Description: >-
+      Optional prefix prepended to the names of all IAM roles created by this
+      template. Leave empty to keep the default names (based on the stack name).
+      Include any desired separator in the value (e.g. "my-org-"). Useful when
+      your account enforces an IAM role naming convention or permission-boundary
+      path requirement.
+    Default: ""
+
 # ==============================================================================
 # Conditions
 # ==============================================================================
@@ -114,6 +124,8 @@ Conditions:
   HasBasicAuth: !And
     - !Not [!Equals [!Ref FiretigerUsername, ""]]
     - !Not [!Equals [!Ref FiretigerPassword, ""]]
+
+  HasIamRolePrefix: !Not [!Equals [!Ref IamRolePrefix, ""]]
 
 # ==============================================================================
 # Resources
@@ -124,7 +136,7 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "${AWS::StackName}-lambda-execution-role"
+      RoleName: !Sub "${IamRolePrefix}${AWS::StackName}-lambda-execution-role"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -223,6 +235,10 @@ Resources:
   SubscriptionFilterManagerRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !If
+        - HasIamRolePrefix
+        - !Sub "${IamRolePrefix}${AWS::StackName}-subscription-filter-manager-role"
+        - !Ref "AWS::NoValue"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

@@ -4,6 +4,12 @@ variable "name_prefix" {
   default     = "firetiger-cloudwatch-logs"
 }
 
+variable "iam_role_prefix" {
+  type        = string
+  description = "Optional prefix prepended to the names of IAM roles created by this module. Leave empty to keep the default names (based on name_prefix). Include any desired separator in the value (e.g. \"my-org-\"). Useful when your account enforces an IAM role naming convention or permission-boundary path requirement."
+  default     = ""
+}
+
 variable "firetiger_endpoint" {
   type        = string
   description = "Firetiger OpenTelemetry logs endpoint (e.g., https://ingest.my-deployment.firetigerapi.com)"
